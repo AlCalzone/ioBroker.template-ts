@@ -1,0 +1,50 @@
+{
+  "name": "iobroker.template-ts",
+  "version": "0.0.1",
+  "description": "ioBroker template Adapter for TypeScript",
+  "author": {
+    "name": "@@Author@@",
+    "email": "@@email@@"
+  },
+  "contributors": [
+    {
+      "name": "@@Author@@",
+      "email": "@@email@@"
+    }
+  ],
+  "homepage": "https://github.com/AlCalzone/ioBroker.template-ts",
+  "license": "MIT",
+  "keywords": [
+    "ioBroker",
+    "template",
+    "Smart Home",
+    "home automation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlCalzone/ioBroker.template-ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-replace": "^0.9.3",
+    "grunt-contrib-jshint": "^0.11.2",
+    "grunt-jscs": "^2.0.0",
+    "grunt-http": "^1.6.0",
+    "@types/chai": "^4.0.0",
+    "@types/mocha": "^2.2.41",
+    "@types/node": "^6.0.78",
+    "chai": "^4.0.2",
+    "mocha": "^3.4.2",
+    "nyc": "^11.0.2",
+    "typescript": "^2.4.2"
+  },
+  "main": "build/main.js",
+  "scripts": {
+    "test": "node node_modules/mocha/bin/mocha"
+  },
+  "bugs": {
+    "url": "https://github.com/AlCalzone/ioBroker.template-ts/issues"
+  },
+  "readmeFilename": "README.md"
+}
