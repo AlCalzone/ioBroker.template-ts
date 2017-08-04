@@ -1,5 +1,5 @@
 {
-  "name": "iobroker.template-ts", 
+  "name": "iobroker.template-ts",
   "version": "0.0.1",
   "description": "ioBroker template Adapter for TypeScript",
   "author": {
