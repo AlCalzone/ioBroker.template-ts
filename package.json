@@ -40,7 +40,7 @@
     "tslint": "^5.6.0",    
     "typescript": "^2.4.2"
   },
-  "main": "build/main.js",
+  "main": "main.js",
   "scripts": {
     "test": "node node_modules/mocha/bin/mocha",
     "lint": "npm run tslint \"src/**/*.ts\"",
