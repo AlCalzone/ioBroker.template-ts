@@ -39,7 +39,7 @@
     "nyc": "^11.0.2",
     "typescript": "^2.4.2"
   },
-  "main": "build/main.js",
+  "main": "main.js",
   "scripts": {
     "test": "node node_modules/mocha/bin/mocha"
   },
