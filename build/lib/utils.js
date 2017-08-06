@@ -6,12 +6,12 @@ function getControllerDir(isInstall) {
     // Find the js-controller location
     var controllerDir = __dirname.replace(/\\/g, '/');
     controllerDir = controllerDir.split('/');
-    if (controllerDir[controllerDir.length - 3] === 'adapter') {
-        controllerDir.splice(controllerDir.length - 3, 3);
+    if (controllerDir[controllerDir.length - 4] === 'adapter') {
+        controllerDir.splice(controllerDir.length - 4, 3);
         controllerDir = controllerDir.join('/');
     }
-    else if (controllerDir[controllerDir.length - 3] === 'node_modules') {
-        controllerDir.splice(controllerDir.length - 3, 3);
+    else if (controllerDir[controllerDir.length - 4] === 'node_modules') {
+        controllerDir.splice(controllerDir.length - 4, 3);
         controllerDir = controllerDir.join('/');
         if (fs.existsSync(controllerDir + '/node_modules/iobroker.js-controller')) {
             controllerDir += '/node_modules/iobroker.js-controller';
