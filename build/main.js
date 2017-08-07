@@ -34,7 +34,7 @@ var utils_1 = require("./lib/utils");
 // name has to be set and has to be equal to adapters folder name and main file name excluding extension
 // adapter will be restarted automatically every time as the configuration changed, e.g system.adapter.template.0
 var adapter = utils_1.default.adapter({
-    name: 'template',
+    name: 'template-ts',
     // is called when databases are connected and adapter received configuration.
     // start here!
     ready: main,

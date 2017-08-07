@@ -1,6 +1,6 @@
 {
     "common": {
-        "name": "template",
+        "name": "template-ts",
         "version": "0.0.1",
         "news": {
             "0.0.1": {
