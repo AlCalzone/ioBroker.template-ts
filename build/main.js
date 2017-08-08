@@ -34,14 +34,14 @@ var utils_1 = require("./lib/utils");
 // name has to be set and has to be equal to adapters folder name and main file name excluding extension
 // adapter will be restarted automatically every time as the configuration changed, e.g system.adapter.template.0
 var adapter = utils_1.default.adapter({
-    name: 'template-ts',
+    name: "template-ts",
     // is called when databases are connected and adapter received configuration.
     // start here!
     ready: main,
     // is called when adapter shuts down - callback has to be called under any circumstances!
     unload: function (callback) {
         try {
-            adapter.log.info('cleaned everything up...');
+            adapter.log.info("cleaned everything up...");
             callback();
         }
         catch (e) {
@@ -51,27 +51,27 @@ var adapter = utils_1.default.adapter({
     // is called if a subscribed object changes
     objectChange: function (id, obj) {
         // Warning, obj can be null if it was deleted
-        adapter.log.info('objectChange ' + id + ' ' + JSON.stringify(obj));
+        adapter.log.info("objectChange " + id + " " + JSON.stringify(obj));
     },
     // is called if a subscribed state changes
     stateChange: function (id, state) {
         // Warning, state can be null if it was deleted
-        adapter.log.info('stateChange ' + id + ' ' + JSON.stringify(state));
+        adapter.log.info("stateChange " + id + " " + JSON.stringify(state));
         // you can use the ack flag to detect if it is status (true) or command (false)
         if (state && !state.ack) {
-            adapter.log.info('ack is not set!');
+            adapter.log.info("ack is not set!");
         }
     },
     // Some message was sent to adapter instance over message box. Used by email, pushover, text2speech, ...
     // requires the property to be configured in io-package.json
     message: function (obj) {
-        if (typeof obj == 'object' && obj.message) {
-            if (obj.command == 'send') {
+        if (typeof obj === "object" && obj.message) {
+            if (obj.command === "send") {
                 // e.g. send email or pushover or whatever
-                console.log('send command');
+                console.log("send command");
                 // Send response in callback if required
                 if (obj.callback)
-                    adapter.sendTo(obj.from, obj.command, 'Message received', obj.callback);
+                    adapter.sendTo(obj.from, obj.command, "Message received", obj.callback);
             }
         }
     },
@@ -79,8 +79,8 @@ var adapter = utils_1.default.adapter({
 function main() {
     // The adapters config (in the instance object everything under the attribute "native") is accessible via
     // adapter.config:
-    adapter.log.info('config test1: ' + adapter.config.test1);
-    adapter.log.info('config test1: ' + adapter.config.test2);
+    adapter.log.info("config test1: " + adapter.config.test1);
+    adapter.log.info("config test1: " + adapter.config.test2);
     /**
      *
      *      For every state in the system there has to be also an object of type state
@@ -90,19 +90,19 @@ function main() {
      *      Because every adapter instance uses its own unique namespace variable names can't collide with other adapters variables
      *
      */
-    adapter.setObject('testVariable', {
-        type: 'state',
+    adapter.setObject("testVariable", {
+        type: "state",
         common: {
-            name: 'testVariable',
-            type: 'boolean',
-            role: 'indicator',
+            name: "testVariable",
+            type: "boolean",
+            role: "indicator",
             read: true,
-            write: true
+            write: true,
         },
-        native: {}
+        native: {},
     });
     // in this template all states changes inside the adapters namespace are subscribed
-    adapter.subscribeStates('*');
+    adapter.subscribeStates("*");
     /**
      *   setState examples
      *
@@ -110,18 +110,18 @@ function main() {
      *
      */
     // the variable testVariable is set to true as command (ack=false)
-    adapter.setState('testVariable', true);
+    adapter.setState("testVariable", true);
     // same thing, but the value is flagged "ack"
     // ack should be always set to true if the value is received from or acknowledged from the target system
-    adapter.setState('testVariable', { val: true, ack: true });
+    adapter.setState("testVariable", { val: true, ack: true });
     // same thing, but the state is deleted after 30s (getState will return null afterwards)
-    adapter.setState('testVariable', { val: true, ack: true, expire: 30 });
+    adapter.setState("testVariable", { val: true, ack: true, expire: 30 });
     // examples for the checkPassword/checkGroup functions
-    adapter.checkPassword('admin', 'iobroker', function (res) {
-        console.log('check user admin pw ioboker: ' + res);
+    adapter.checkPassword("admin", "iobroker", function (res) {
+        console.log("check user admin pw ioboker: " + res);
     });
-    adapter.checkGroup('admin', 'admin', function (res) {
-        console.log('check group user admin group admin: ' + res);
+    adapter.checkGroup("admin", "admin", function (res) {
+        console.log("check group user admin group admin: " + res);
     });
 }
 //# sourceMappingURL=main.js.map

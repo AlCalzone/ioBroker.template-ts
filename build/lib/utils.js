@@ -1,27 +1,30 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+// tslint:disable:unified-signatures
+// tslint:disable:no-var-requires
 var fs = require("fs");
 // Get js-controller directory to load libs
 function getControllerDir(isInstall) {
     // Find the js-controller location
-    var controllerDir = __dirname.replace(/\\/g, '/');
-    controllerDir = controllerDir.split('/');
-    if (controllerDir[controllerDir.length - 4] === 'adapter') {
+    // tslint:disable-next-line:no-shadowed-variable
+    var controllerDir = __dirname.replace(/\\/g, "/");
+    controllerDir = controllerDir.split("/");
+    if (controllerDir[controllerDir.length - 4] === "adapter") {
         controllerDir.splice(controllerDir.length - 4, 4);
-        controllerDir = controllerDir.join('/');
+        controllerDir = controllerDir.join("/");
     }
-    else if (controllerDir[controllerDir.length - 4] === 'node_modules') {
+    else if (controllerDir[controllerDir.length - 4] === "node_modules") {
         controllerDir.splice(controllerDir.length - 4, 4);
-        controllerDir = controllerDir.join('/');
-        if (fs.existsSync(controllerDir + '/node_modules/iobroker.js-controller')) {
-            controllerDir += '/node_modules/iobroker.js-controller';
+        controllerDir = controllerDir.join("/");
+        if (fs.existsSync(controllerDir + "/node_modules/iobroker.js-controller")) {
+            controllerDir += "/node_modules/iobroker.js-controller";
         }
-        else if (fs.existsSync(controllerDir + '/node_modules/ioBroker.js-controller')) {
-            controllerDir += '/node_modules/ioBroker.js-controller';
+        else if (fs.existsSync(controllerDir + "/node_modules/ioBroker.js-controller")) {
+            controllerDir += "/node_modules/ioBroker.js-controller";
         }
-        else if (!fs.existsSync(controllerDir + '/controller.js')) {
+        else if (!fs.existsSync(controllerDir + "/controller.js")) {
             if (!isInstall) {
-                console.log('Cannot find js-controller');
+                console.log("Cannot find js-controller");
                 process.exit(10);
             }
             else {
@@ -31,7 +34,7 @@ function getControllerDir(isInstall) {
     }
     else {
         if (!isInstall) {
-            console.log('Cannot find js-controller');
+            console.log("Cannot find js-controller");
             process.exit(10);
         }
         else {
@@ -41,14 +44,14 @@ function getControllerDir(isInstall) {
     return controllerDir;
 }
 // Read controller configuration file
-var controllerDir = getControllerDir(typeof process !== 'undefined' && process.argv && process.argv.indexOf('--install') !== -1);
+var controllerDir = getControllerDir(typeof process !== "undefined" && process.argv && process.argv.indexOf("--install") !== -1);
 function getConfig() {
-    return JSON.parse(fs.readFileSync(controllerDir + '/conf/iobroker.json', "utf8"));
+    return JSON.parse(fs.readFileSync(controllerDir + "/conf/iobroker.json", "utf8"));
 }
-var adapter = require(controllerDir + '/lib/adapter.js');
+var adapter = require(controllerDir + "/lib/adapter.js");
 exports.default = {
     controllerDir: controllerDir,
     getConfig: getConfig,
-    adapter: adapter
+    adapter: adapter,
 };
 //# sourceMappingURL=utils.js.map
