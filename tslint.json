@@ -4,9 +4,7 @@
         "tslint:recommended"
     ],
     "rules": {
-        "indent": [
-            "tabs", 4
-        ],
+        "indent": [true, "tabs", 4],
         "object-literal-sort-keys": false,
         "object-literal-shorthand": false,
         "array-type": ["array"],
