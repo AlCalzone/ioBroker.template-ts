@@ -108,6 +108,10 @@ module.exports = function (grunt) {
                             replacement: newname ? (newname[0].toUpperCase() + newname.substring(1)) : 'Template'
                         },
                         {
+                            match: /template\.png/g,
+                            replacement: newname + ".png"
+                        },
+                        {
                             match: /@@Author@@/g,
                             replacement: author
                         },
