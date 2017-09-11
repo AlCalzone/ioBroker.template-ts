@@ -139,7 +139,7 @@ declare global {
 		}
 
 		/** Callback information for a passed message */
-		interface MessageCallback {
+		interface MessageCallbackInfo {
 			/** The original message payload */
 			message: string | object;
 			/** ID of this callback */
@@ -149,6 +149,7 @@ declare global {
 			/** Timestamp of this message */
 			time: number;
 		}
+		type MessageCallback = (result?: any) => void;
 
 		/** A message being passed between adapter instances */
 		interface Message {
@@ -161,7 +162,7 @@ declare global {
 			/** ID of this message */
 			_id: number;
 			/** Callback information. This is set when the source expects a response */
-			callback: MessageCallback;
+			callback: MessageCallbackInfo;
 		}
 
 
@@ -296,14 +297,14 @@ declare global {
 			 * If the ID of an instance is given (e.g. "admin.0"), only this instance will receive the message.
 			 * If the name of an adapter is given (e.g. "admin"), all instances of this adapter will receive it.
 			 */
-			sendTo(instanceName: string, message: string | object, callback?: (result?: any) => void): void;
-			sendTo(instanceName: string, command: string, message: string | object, callback?: (result?: any) => void): void;
+			sendTo(instanceName: string, message: string | object, callback?: MessageCallback | MessageCallbackInfo): void;
+			sendTo(instanceName: string, command: string, message: string | object, callback?: MessageCallback | MessageCallbackInfo): void;
 
 			/**
 			 * Sends a message to a specific host or all hosts.
 			 */
-			sendToHost(hostName: string, message: string | object, callback?: (result?: any) => void): void;
-			sendToHost(hostName: string, command: string, message: string | object, callback?: (result?: any) => void): void;
+			sendToHost(hostName: string, message: string | object, callback?: MessageCallback | MessageCallbackInfo): void;
+			sendToHost(hostName: string, command: string, message: string | object, callback?: MessageCallback | MessageCallbackInfo): void;
 
 			/** Convert ID to {device: D, channel: C, state: S} */
 			idToDCS(id: string): {
