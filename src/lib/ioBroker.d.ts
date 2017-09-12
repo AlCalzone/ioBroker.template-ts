@@ -76,8 +76,8 @@ declare global {
 			/** role of the state (used in user interfaces to indicate which widget to choose) */
 			role: string;
 
-			/** 
-			 * Dictionary of possible values for this state in the form 
+			/**
+			 * Dictionary of possible values for this state in the form
 			 * <pre>
 			 * {
 			 *     "internal value 1": "displayed value 1",
@@ -126,7 +126,255 @@ declare global {
 			common: ObjectCommon; // TODO: any definition for device?
 		};
 
-		type Objects = any; // TODO implement
+		// DEFINITION of ACL, Users, and Objects:
+		// https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/objects/objectsInMemServer.js
+
+		/** Defines access rights for a single object type */
+		interface ACLFragment {
+			/** Whether a user may enumerate objects of this type */
+			list: boolean;
+			/** Whether a user may read objects of this type */
+			read: boolean;
+			/** Whether a user may write objects of this type */
+			write: boolean;
+			/** Whether a user may create objects of this type */
+			create: boolean;
+			/** Whether a user may delete objects of this type */
+			"delete": boolean;
+		}
+
+		/** Defines all access rights a user or group has */
+		interface ACL {
+			/** The access rights for files */
+			file: ACLFragment;
+			/** The access rights for objects */
+			object: ACLFragment;
+			/** The access rights for users/groups */
+			users: ACLFragment;
+		}
+
+		type UserGroup = any; // TODO find out how this looks like
+		// interface UserGroup { }
+
+		/** Contains information about a user */
+		interface User {
+			/** Which groups this user belongs to */
+			groups: UserGroup[];
+			/** Access rights of this user */
+			acl: ACL;
+		}
+
+		/** Provides low-level access to ioBroker objects */
+		interface Objects {
+			/**
+			 * For a given user, returns the groups he belongs to, and his access rights
+			 * @param user Name of the user. Has to start with "system.user."
+			 * @param callback The callback function to be invoked with the return values
+			 */
+			getUserGroup(user: string, callback: GetUserGroupCallback): void;
+
+			/**
+			 * Determines the mime type for a given file extension
+			 * @param ext File extension, including the leading dot, e.g. ".zip"
+			 */
+			getMimeType(ext: string): {mimeType: string, isBinary: boolean};
+
+			/**
+			 * Writes a file.
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name File name
+			 * @param data Contents of the file
+			 * @param options (optional) MIME type of the file (string). Or some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			writeFile(id: string, name: string, data: Buffer | string, callback: GenericCallback): void;
+			writeFile(id: string, name: string, data: Buffer | string, options: string | any, callback: GenericCallback): void;
+
+			/**
+			 * Reads a file.
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name File name
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			readFile(id: string, name: string, callback: ReadFileCallback): void;
+			readFile(id: string, name: string, options: any, callback: ReadFileCallback): void;
+
+			/**
+			 * Deletes a file.
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name File name
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			unlink(id: string, name: string, callback: GenericCallback): void;
+			unlink(id: string, name: string, options: any, callback: GenericCallback): void;
+			/**
+			 * Deletes a file.
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name File name
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			delFile(id: string, name: string, callback: GenericCallback): void;
+			delFile(id: string, name: string, options: any, callback: GenericCallback): void;
+
+			/**
+			 * Finds all files and directories starting with <name>
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name File or directory name
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			readDir(id: string, name: string, callback: ReadDirCallback): void;
+			readDir(id: string, name: string, options: any, callback: ReadDirCallback): void;
+
+			/**
+			 * Renames a file or directory
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param oldName Old file or directory name
+			 * @param newName Name to rename to
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			rename(id: string, oldName: string, newName: string, callback: GenericCallback): void;
+			rename(id: string, oldName: string, newName: string, options: any, callback: GenericCallback): void;
+
+			/**
+			 * Creates an empty file with the given name
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name File name
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			touch(id: string, name: string, callback: GenericCallback): void;
+			touch(id: string, name: string, options: any, callback: GenericCallback): void;
+
+			/**
+			 * Deletes all files in the root directory matching <name>
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name Pattern to match against
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			rm(id: string, name: string, callback: RmCallback): void;
+			rm(id: string, name: string, options: any, callback: RmCallback): void;
+
+			/**
+			 * Creates an empty directory with the given name
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name Directory name
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			mkDir(id: string, name: string, callback: GenericCallback): void;
+			mkDir(id: string, name: string, options: any, callback: GenericCallback): void;
+
+			/**
+			 * Takes possession all files in the root directory matching <name>
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name Pattern to match against
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			chownFile(id: string, name: string, callback: ChownFileCallback): void;
+			chownFile(id: string, name: string, options: any, callback: ChownFileCallback): void;
+
+			/**
+			 * Changes access rights of all files in the root directory matching <name>
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name Pattern to match against
+			 * @param options Mode of the access change as a number or hexadecimal string
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			chmodFile(id: string, name: string, options: {mode: number | string} | DictionaryLike<any>, callback: ChownFileCallback): void;
+
+			// not documented. enabled = true seems to disable the cache
+			// enableFileCache(enabled, options, callback)
+
+			/**
+			 * Subscribe to object changes
+			 * @param pattern The pattern to match against
+			 */
+			subscribeConfig(pattern: string, callback: () => void): void;
+			subscribeConfig(pattern: string, options: any, callback: () => void): void;
+			/**
+			 * Subscribe to object changes
+			 * @param pattern The pattern to match against
+			 */
+			subscribe(pattern: string, callback: () => void): void;
+			subscribe(pattern: string, options: any, callback: () => void): void;
+
+			/**
+			 * Unsubscribe from object changes
+			 * @param pattern The pattern to match against
+			 */
+			unsubscribeConfig(pattern: string, callback: () => void): void;
+			unsubscribeConfig(pattern: string, options: any, callback: () => void): void;
+			/**
+			 * Unsubscribe from object changes
+			 * @param pattern The pattern to match against
+			 */
+			unsubscribe(pattern: string, callback: () => void): void;
+			unsubscribe(pattern: string, options: any, callback: () => void): void;
+
+			/**
+			 * Takes possession of all objects matching <pattern>
+			 * @param pattern Pattern to match against
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			chownObject(pattern: string, callback: ChownObjectCallback): void;
+			chownObject(pattern: string, options: any, callback: ChownObjectCallback): void;
+
+			/**
+			 * Changes access rights of all objects matching <pattern>
+			 * @param pattern Pattern to match against
+			 * @param options Mode of the access change as a number or hexadecimal string
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			chmodObject(pattern: string, callback: ChownObjectCallback): void;
+			chmodObject(pattern: string, options: any, callback: ChownObjectCallback): void;
+
+			/**
+			 * Retrieves a copy of the object with the given ID
+			 * @param id Id of the object to find
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			getObject(id: string, callback: GetObjectCallback): void;
+			getObject(id: string, options: any, callback: GetObjectCallback): void;
+
+			/**
+			 * Returns a list of config keys matching <pattern>
+			 * @param pattern Pattern to match against
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param dontModify unused
+			 */
+			getConfigKeys(pattern: string, callback: GetConfigKeysCallback, dontModify: any): void;
+			getConfigKeys(pattern: string, options: any, callback: GetConfigKeysCallback, dontModify: any): void;
+
+			/**
+			 * Returns a list of objects with the given ids
+			 * @param keys IDs of the objects to be retrieved
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param dontModify unused
+			 */
+			getObjects(keys: string[], callback: GetObjectsCallback2, dontModify: any): void;
+			getObjects(keys: string[], options: any, callback: GetObjectsCallback2, dontModify: any): void;
+
+			/**
+			 * Creates or overwrites an object in the object db
+			 * @param id ID of the object
+			 * @param obj Object to store
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation finished (successfully or not)
+			 */
+			setObject(id: string, obj: ioBroker.Object, callback: SetObjectCallback): void;
+			setObject(id: string, obj: ioBroker.Object, options: any, callback: SetObjectCallback): void;
+		}
 
 		interface Logger {
 			/** log message with debug level */
@@ -239,7 +487,7 @@ declare global {
 
 			/** if true, stateChange will be called with an id that has no namespace, e.g. "state" instead of "adapter.0.state". Default: false */
 			noNamespace?: boolean;
-		}
+		} // end interface AdapterOptions
 
 		interface Adapter {
 			/** The name of the adapter */
@@ -294,6 +542,7 @@ declare global {
 			checkGroup(user: string, group: string, callback: (result: boolean) => void): void;
 			checkGroup(user: string, group: string, options: any, callback: (result: boolean) => void): void;
 			/** <INTERNAL> Determines the users permissions */
+			// TODO: find out what the any types are here, maybe ACL?
 			calculatePermissions(user: string, commandsPermissions: any, callback: (result: any) => void): void;
 			calculatePermissions(user: string, commandsPermissions: any, options: any, callback: (result: any) => void): void;
 			/** Returns SSL certificates by name (private key, public cert and chained certificate) for creation of HTTPS servers */
@@ -505,7 +754,7 @@ declare global {
 			formatValue(value: number | string, decimals: number, format: any): string;
 			formatDate(dateObj: string | Date | number, format: string): string;
 			formatDate(dateObj: string | Date | number, isDuration: boolean | string, format: string): string;
-		}
+		} // end interface Adapter
 
 		type ObjectChangeHandler = (id: string, obj: ioBroker.Object) => void;
 		type StateChangeHandler = (id: string, obj: State) => void;
@@ -531,7 +780,63 @@ declare global {
 		type DeleteStateCallback = (err: string, id?: string) => void;
 		type GetHistoryCallback = (err: string, result: (State & { id?: string })[], step: number, sessionId?: string) => void;
 
-		type ReadDirCallback = (err: string, entries: DirectoryEntry[]) => void;
+		/** Contains the return values of readDir */
+		interface ReadDirResult {
+			/** Name of the file or directory */
+			file: string;
+			/** File system stats */
+			stats: fs.Stats;
+			/** Whether this is a directory or a file */
+			isDir: boolean;
+			/** Access rights */
+			acl: any; // TODO: find out how this looks like
+			/** Date of last modification */
+			modifiedAt: number;
+			/** Date of creation */
+			createdAt: number;
+		}
+		type ReadDirCallback = (err: string, entries?: ReadDirResult[]) => void;
 		type ReadFileCallback = (err: string, file?: Buffer | string, mimeType?: string) => void;
-	}
-}
+
+		/** Contains the return values of chownFile */
+		interface ChownResult {
+			/** The parent directory of the processed file or directory */
+			path: string;
+			/** Name of the file or directory */
+			file: string;
+			/** File system stats */
+			stats: fs.Stats;
+			/** Whether this is a directory or a file */
+			isDir: boolean;
+			/** Access rights */
+			acl: any; // TODO: find out how this looks like
+			/** Date of last modification */
+			modifiedAt: number;
+			/** Date of creation */
+			createdAt: number;
+		}
+		type ChownFileCallback = (err: string, entries?: ChownResult[], id?: string) => void;
+
+		/** Contains the return values of rm */
+		interface RmResult {
+			/** The parent directory of the deleted file or directory */
+			path: string;
+			/** The name of the deleted file or directory */
+			file: string;
+			/** Whether the deleted object was a directory or a file */
+			isDir: boolean;
+		}
+		type RmCallback = (err: string, entries?: RmResult[]) => void;
+
+		type GetUserGroupCallback = (objectsInstance: Objects, user: User, groups: UserGroup[], acl: ACL) => void;
+
+		/** Contains the return values of chownObject */
+		type ChownObjectResult = any; // TODO: find out what this looks like
+		type ChownObjectCallback = (err: string, list?: ChownObjectResult[]) => void;
+
+		type GetConfigKeysCallback = (err: string, list?: string[]) => void;
+		// this is a version of the callback used by Objects.getObjects
+		type GetObjectsCallback2 = (err: string, objects: (ioBroker.Object | {err: string})[]) => void;
+
+	} // end namespace ioBroker
+} // end declare global
