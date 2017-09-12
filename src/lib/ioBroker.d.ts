@@ -126,9 +126,6 @@ declare global {
 			common: ObjectCommon; // TODO: any definition for device?
 		};
 
-		// DEFINITION of ACL, Users, and Objects:
-		// https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/objects/objectsInMemServer.js
-
 		/** Defines access rights for a single object type */
 		interface ACLFragment {
 			/** Whether a user may enumerate objects of this type */
@@ -164,6 +161,16 @@ declare global {
 			acl: ACL;
 		}
 
+		/** Parameters for @link{Objects.getObjectList} */
+		interface GetObjectListParams {
+			/** First id to include in the return list */
+			startkey: string;
+			/** Last id to include in the return list */
+			endkey: string;
+			/** Whether docs should be included in the return list */ // TODO: What are docs?
+			include_docs: boolean;
+		}
+
 		/** Provides low-level access to ioBroker objects */
 		interface Objects {
 			/**
@@ -185,7 +192,7 @@ declare global {
 			 * @param name File name
 			 * @param data Contents of the file
 			 * @param options (optional) MIME type of the file (string). Or some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			writeFile(id: string, name: string, data: Buffer | string, callback: GenericCallback): void;
 			writeFile(id: string, name: string, data: Buffer | string, options: string | any, callback: GenericCallback): void;
@@ -195,7 +202,7 @@ declare global {
 			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
 			 * @param name File name
 			 * @param options (optional) Some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			readFile(id: string, name: string, callback: ReadFileCallback): void;
 			readFile(id: string, name: string, options: any, callback: ReadFileCallback): void;
@@ -205,7 +212,7 @@ declare global {
 			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
 			 * @param name File name
 			 * @param options (optional) Some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			unlink(id: string, name: string, callback: GenericCallback): void;
 			unlink(id: string, name: string, options: any, callback: GenericCallback): void;
@@ -214,7 +221,7 @@ declare global {
 			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
 			 * @param name File name
 			 * @param options (optional) Some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			delFile(id: string, name: string, callback: GenericCallback): void;
 			delFile(id: string, name: string, options: any, callback: GenericCallback): void;
@@ -224,7 +231,7 @@ declare global {
 			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
 			 * @param name File or directory name
 			 * @param options (optional) Some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			readDir(id: string, name: string, callback: ReadDirCallback): void;
 			readDir(id: string, name: string, options: any, callback: ReadDirCallback): void;
@@ -235,7 +242,7 @@ declare global {
 			 * @param oldName Old file or directory name
 			 * @param newName Name to rename to
 			 * @param options (optional) Some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			rename(id: string, oldName: string, newName: string, callback: GenericCallback): void;
 			rename(id: string, oldName: string, newName: string, options: any, callback: GenericCallback): void;
@@ -245,7 +252,7 @@ declare global {
 			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
 			 * @param name File name
 			 * @param options (optional) Some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			touch(id: string, name: string, callback: GenericCallback): void;
 			touch(id: string, name: string, options: any, callback: GenericCallback): void;
@@ -255,7 +262,7 @@ declare global {
 			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
 			 * @param name Pattern to match against
 			 * @param options (optional) Some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			rm(id: string, name: string, callback: RmCallback): void;
 			rm(id: string, name: string, options: any, callback: RmCallback): void;
@@ -265,7 +272,7 @@ declare global {
 			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
 			 * @param name Directory name
 			 * @param options (optional) Some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			mkDir(id: string, name: string, callback: GenericCallback): void;
 			mkDir(id: string, name: string, options: any, callback: GenericCallback): void;
@@ -275,7 +282,7 @@ declare global {
 			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
 			 * @param name Pattern to match against
 			 * @param options (optional) Some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			chownFile(id: string, name: string, callback: ChownFileCallback): void;
 			chownFile(id: string, name: string, options: any, callback: ChownFileCallback): void;
@@ -285,7 +292,7 @@ declare global {
 			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
 			 * @param name Pattern to match against
 			 * @param options Mode of the access change as a number or hexadecimal string
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			chmodFile(id: string, name: string, options: {mode: number | string} | DictionaryLike<any>, callback: ChownFileCallback): void;
 
@@ -322,7 +329,7 @@ declare global {
 			 * Takes possession of all objects matching <pattern>
 			 * @param pattern Pattern to match against
 			 * @param options (optional) Some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			chownObject(pattern: string, callback: ChownObjectCallback): void;
 			chownObject(pattern: string, options: any, callback: ChownObjectCallback): void;
@@ -331,7 +338,7 @@ declare global {
 			 * Changes access rights of all objects matching <pattern>
 			 * @param pattern Pattern to match against
 			 * @param options Mode of the access change as a number or hexadecimal string
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			chmodObject(pattern: string, callback: ChownObjectCallback): void;
 			chmodObject(pattern: string, options: any, callback: ChownObjectCallback): void;
@@ -340,16 +347,24 @@ declare global {
 			 * Retrieves a copy of the object with the given ID
 			 * @param id Id of the object to find
 			 * @param options (optional) Some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			getObject(id: string, callback: GetObjectCallback): void;
 			getObject(id: string, options: any, callback: GetObjectCallback): void;
+			/**
+			 * Retrieves a copy of the object with the given ID
+			 * @param id Id of the object to find
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getConfig(id: string, callback: GetObjectCallback): void;
+			getConfig(id: string, options: any, callback: GetObjectCallback): void;
 
 			/**
 			 * Returns a list of config keys matching <pattern>
 			 * @param pattern Pattern to match against
 			 * @param options (optional) Some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 * @param dontModify unused
 			 */
 			getConfigKeys(pattern: string, callback: GetConfigKeysCallback, dontModify: any): void;
@@ -359,22 +374,92 @@ declare global {
 			 * Returns a list of objects with the given ids
 			 * @param keys IDs of the objects to be retrieved
 			 * @param options (optional) Some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 * @param dontModify unused
 			 */
 			getObjects(keys: string[], callback: GetObjectsCallback2, dontModify: any): void;
 			getObjects(keys: string[], options: any, callback: GetObjectsCallback2, dontModify: any): void;
+			/**
+			 * Returns a list of objects with the given ids
+			 * @param keys IDs of the objects to be retrieved
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 * @param dontModify unused
+			 */
+			getConfigs(keys: string[], callback: GetObjectsCallback2, dontModify: any): void;
+			getConfigs(keys: string[], options: any, callback: GetObjectsCallback2, dontModify: any): void;
 
 			/**
 			 * Creates or overwrites an object in the object db
 			 * @param id ID of the object
 			 * @param obj Object to store
 			 * @param options (optional) Some internal options.
-			 * @param callback Is called when the operation finished (successfully or not)
+			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
 			setObject(id: string, obj: ioBroker.Object, callback: SetObjectCallback): void;
 			setObject(id: string, obj: ioBroker.Object, options: any, callback: SetObjectCallback): void;
-		}
+			/**
+			 * Creates or overwrites an object in the object db
+			 * @param id ID of the object
+			 * @param obj Object to store
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			setConfig(id: string, obj: ioBroker.Object, callback: SetObjectCallback): void;
+			setConfig(id: string, obj: ioBroker.Object, options: any, callback: SetObjectCallback): void;
+
+			/**
+			 * Deletes an object in the object db
+			 * @param id ID of the object
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			delObject(id: string, callback: GenericCallback): void;
+			delObject(id: string, options: any, callback: GenericCallback): void;
+			/**
+			 * Deletes an object in the object db
+			 * @param id ID of the object
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			delConfig(id: string, callback: GenericCallback): void;
+			delConfig(id: string, options: any, callback: GenericCallback): void;
+
+			/**
+			 * Returns a list of objects with id between params.startkey and params.endkey
+			 * @param params Parameters determining the objects included in the return list. Null to include all objects
+			 * @param options (optional) If the returned list should be sorted. And some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getObjectList(params: GetObjectListParams | null, callback: GetObjectListCallback): void;
+			getObjectList(params: GetObjectListParams | null, options: { sorted?: boolean } | DictionaryLike<any>, callback: GetObjectListCallback): void;
+
+			/**
+			 * Extends an object in the object db with new properties
+			 * @param id ID of the object
+			 * @param obj Object to extend the original one with. May be just parts of an object.
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			extendObject(id: string, obj: Partial<ioBroker.Object>, callback: ExtendObjectCallback): void;
+			extendObject(id: string, obj: Partial<ioBroker.Object>, options: any, callback: ExtendObjectCallback): void;
+
+			/**
+			 * Finds an object by ID or name. If multiple objects were found, return the first one
+			 * @param idOrName ID or name of the object
+			 * @param type If != null, only return an object with a common.type equal to this
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			findObject(idOrName: string, type: CommonType | null, callback: FindObjectCallback): void;
+			findObject(idOrName: string, type: CommonType | null, options: any, callback: FindObjectCallback): void;
+
+			// I'd rather not document a function with the name "destroyDB"
+
+			/** Destructor of the class. Call this before shutting down. */
+			destroy(): void;
+
+		} // end interface Objects
 
 		interface Logger {
 			/** log message with debug level */
@@ -771,7 +856,15 @@ declare global {
 			},
 		) => void;
 		type GetObjectsCallback = (err: string, objects: DictionaryLike<ioBroker.Object>) => void;
-		type FindObjectCallback = (err: string, id?: string, name?: string) => void;
+
+		type FindObjectCallback = (
+			/** If an error happened, this contains the message */
+			err: string,
+			/** If an object was found, this contains the ID */
+			id?: string,
+			/** If an object was found, this contains the common.name */
+			name?: string,
+		) => void;
 
 		type GetStateCallback = (err: string, state: State) => void;
 		type GetStatesCallback = (err: string, states: DictionaryLike<State>) => void;
@@ -836,7 +929,19 @@ declare global {
 
 		type GetConfigKeysCallback = (err: string, list?: string[]) => void;
 		// this is a version of the callback used by Objects.getObjects
-		type GetObjectsCallback2 = (err: string, objects: (ioBroker.Object | {err: string})[]) => void;
+		type GetObjectsCallback2 = (err: string, objects: (ioBroker.Object | { err: string })[]) => void;
+
+		interface GetObjectListItem {
+			/** The ID of this object */
+			id: string;
+			/** A copy of the object */
+			value: ioBroker.Object;
+			/** The same as @link{value} */
+			doc: ioBroker.Object;
+		}
+		type GetObjectListCallback = (err: string, result: { rows: GetObjectListItem[] }) => void;
+
+		type ExtendObjectCallback = (err: string, result?: {id: string, value: ioBroker.Object}, id?: string ) => void;
 
 	} // end namespace ioBroker
 } // end declare global
