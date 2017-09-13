@@ -140,14 +140,76 @@ declare global {
 			"delete": boolean;
 		}
 
-		/** Defines all access rights a user or group has */
-		interface ACL {
+		/** Defines the access rights a user or group has to change objects */
+		interface ObjectsACL {
 			/** The access rights for files */
 			file: ACLFragment;
 			/** The access rights for objects */
 			object: ACLFragment;
 			/** The access rights for users/groups */
 			users: ACLFragment;
+		}
+		/** Defined the complete set of access rights a user has */
+		interface ACL extends ObjectsACL {
+			/** The access rights for states */
+			state: ACLFragment;
+			/** The name of the user this ACL is for */
+			user: string;
+			/** The name of the groups this ACL was merged from */
+			groups: string[];
+			/** The access rights for certain commands */
+			other: {
+				execute: boolean,
+				http: boolean,
+				sendto: boolean,
+			};
+		}
+
+		interface Permission {
+			/** The type of the permission */
+			type: string;
+			/** Which kind of operation is required */
+			operation: string;
+		}
+		interface ObjectOrStatePermission extends Permission {
+			type: "object" | "file" | "users" | "state";
+			operation: "list" | "read" | "write" | "create" | "delete";
+		}
+		interface OtherPermission extends Permission {
+			type: "other";
+			operation: "execute" | "http" | "sendto";
+		}
+		interface CommandsPermissions {
+			// TODO: Are all properties required or is a partial object ok?
+			getObject: ObjectOrStatePermission;
+			getObjects: ObjectOrStatePermission;
+			getObjectView: ObjectOrStatePermission;
+			setObject: ObjectOrStatePermission;
+			subscribeObjects: ObjectOrStatePermission;
+			unsubscribeObjects: ObjectOrStatePermission;
+			getStates: ObjectOrStatePermission;
+			getState: ObjectOrStatePermission;
+			setState: ObjectOrStatePermission;
+			getStateHistory: ObjectOrStatePermission;
+			subscribe: ObjectOrStatePermission;
+			unsubscribe: ObjectOrStatePermission;
+			getVersion: Permission;
+			httpGet: OtherPermission;
+			sendTo: OtherPermission;
+			sendToHost: OtherPermission;
+			readFile: ObjectOrStatePermission;
+			readFile64: ObjectOrStatePermission;
+			writeFile: ObjectOrStatePermission;
+			writeFile64: ObjectOrStatePermission;
+			unlink: ObjectOrStatePermission;
+			rename: ObjectOrStatePermission;
+			mkdir: ObjectOrStatePermission;
+			readDir: ObjectOrStatePermission;
+			chmodFile: ObjectOrStatePermission;
+			authEnabled: Permission;
+			disconnect: Permission;
+			listPermissions: Permission;
+			getUserPermissions: ObjectOrStatePermission;
 		}
 
 		type UserGroup = any; // TODO find out how this looks like
@@ -158,15 +220,19 @@ declare global {
 			/** Which groups this user belongs to */
 			groups: UserGroup[];
 			/** Access rights of this user */
-			acl: ACL;
+			acl: ObjectsACL;
 		}
 
-		/** Parameters for @link{Objects.getObjectList} */
-		interface GetObjectListParams {
+		/** Parameters for @link{Objects.getObjectView} */
+		interface GetObjectViewParams {
 			/** First id to include in the return list */
 			startkey: string;
 			/** Last id to include in the return list */
 			endkey: string;
+		}
+
+		/** Parameters for @link{Objects.getObjectList} */
+		interface GetObjectListParams extends GetObjectViewParams {
 			/** Whether docs should be included in the return list */ // TODO: What are docs?
 			include_docs: boolean;
 		}
@@ -435,6 +501,19 @@ declare global {
 			getObjectList(params: GetObjectListParams | null, options: { sorted?: boolean } | DictionaryLike<any>, callback: GetObjectListCallback): void;
 
 			/**
+			 * Query a predefined object view (similar to SQL stored procedures) and return the results
+			 * For a detailed description refer to https://github.com/ioBroker/ioBroker/wiki/Adapter-Development-Documentation#object-fields
+			 * or http://guide.couchdb.org/editions/1/en/views.html
+			 * @param design The namespace of the object view, as defined in io-package.json. Usually the adapter name, e.g. "hm-rpc"
+			 * @param search The name of the object view.
+			 * @param params Parameters to additionally filter out objects from the return list. Null to include all objects
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getObjectView(design: string, search: string, params: GetObjectViewParams | null, callback: GetObjectViewCallback): void;
+			getObjectView(design: string, search: string, params: GetObjectViewParams | null, options: any, callback: GetObjectViewCallback): void;
+
+			/**
 			 * Extends an object in the object db with new properties
 			 * @param id ID of the object
 			 * @param obj Object to extend the original one with. May be just parts of an object.
@@ -627,9 +706,8 @@ declare global {
 			checkGroup(user: string, group: string, callback: (result: boolean) => void): void;
 			checkGroup(user: string, group: string, options: any, callback: (result: boolean) => void): void;
 			/** <INTERNAL> Determines the users permissions */
-			// TODO: find out what the any types are here, maybe ACL?
-			calculatePermissions(user: string, commandsPermissions: any, callback: (result: any) => void): void;
-			calculatePermissions(user: string, commandsPermissions: any, options: any, callback: (result: any) => void): void;
+			calculatePermissions(user: string, commandsPermissions: CommandsPermissions, callback: (result: ACL) => void): void;
+			calculatePermissions(user: string, commandsPermissions: CommandsPermissions, options: any, callback: (result: ACL) => void): void;
 			/** Returns SSL certificates by name (private key, public cert and chained certificate) for creation of HTTPS servers */
 			getCertificates(publicName: string, privateName: string, chainedName: string, callback: (err: string, certs?: Certificates, useLetsEncryptCert?: boolean) => void): void;
 
@@ -921,7 +999,7 @@ declare global {
 		}
 		type RmCallback = (err: string, entries?: RmResult[]) => void;
 
-		type GetUserGroupCallback = (objectsInstance: Objects, user: User, groups: UserGroup[], acl: ACL) => void;
+		type GetUserGroupCallback = (objectsInstance: Objects, user: User, groups: UserGroup[], acl: ObjectsACL) => void;
 
 		/** Contains the return values of chownObject */
 		type ChownObjectResult = any; // TODO: find out what this looks like
@@ -929,17 +1007,23 @@ declare global {
 
 		type GetConfigKeysCallback = (err: string, list?: string[]) => void;
 		// this is a version of the callback used by Objects.getObjects
-		type GetObjectsCallback2 = (err: string, objects: (ioBroker.Object | { err: string })[]) => void;
+		type GetObjectsCallback2 = (err: string, objects?: (ioBroker.Object | { err: string })[]) => void;
 
-		interface GetObjectListItem {
+		interface GetObjectViewItem {
 			/** The ID of this object */
 			id: string;
+			/** A copy of the object from the DB or some aggregation result */
+			value: ioBroker.Object | any;
+		}
+		type GetObjectViewCallback = (err: string, result?: { rows: GetObjectViewItem[] }) => void;
+
+		interface GetObjectListItem extends GetObjectViewItem {
 			/** A copy of the object */
 			value: ioBroker.Object;
 			/** The same as @link{value} */
 			doc: ioBroker.Object;
 		}
-		type GetObjectListCallback = (err: string, result: { rows: GetObjectListItem[] }) => void;
+		type GetObjectListCallback = (err: string, result?: { rows: GetObjectListItem[] }) => void;
 
 		type ExtendObjectCallback = (err: string, result?: {id: string, value: ioBroker.Object}, id?: string ) => void;
 
