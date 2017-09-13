@@ -45,7 +45,131 @@ declare global {
 			c?: string;
 		}
 
-		type States = any; // TODO implement
+		/** Provides low-level access to the ioBroker states DB */
+		interface States {
+
+			/**
+			 * Returns a list of states with the given ids
+			 * @param keys IDs of the states to be retrieved
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 * @param dontModify unused
+			 */
+			getStates(keys: string[], callback: GetStates2Callback, dontModify?: any): void;
+
+			/**
+			 * Returns the state with the given id
+			 * @param id ID of the state to be retrieved
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getState(id: string, callback: GetStateCallback): void;
+
+			/**
+			 * Stores a state in the db
+			 * @param id ID of the state to be stored
+			 * @param state The state to be stored in the db
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			setState(id: string, state?: string | number | boolean | State | Partial<State>, callback?: SetStateCallback): void;
+
+			/**
+			 * Updates a state in memory without triggering a save
+			 * @param id ID of the state to be stored
+			 * @param state The state to be updated
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			setRawState(id: string, state: State, callback?: SetStateCallback): void;
+
+			/**
+			 * Deletes a state
+			 * @param id ID of the state to be stored
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			delState(id: string, callback: DeleteStateCallback): void;
+
+			/**
+			 * Retrieves all ids of states matching @link{pattern}
+			 * @param pattern The pattern to match against
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 * @param dontModify unused
+			 */
+			getKeys(pattern: string, callback: GetConfigKeysCallback, dontModify?: any): void;
+
+			/**
+			 * Subscribe to changes of all states matching @link{pattern}
+			 * @param pattern The pattern to match against
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			subscribe(pattern: string, cb: () => void): void;
+			/**
+			 * Unsubscribe from changes of all states matching @link{pattern}
+			 * @param pattern The pattern to match against
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			unsubscribe(pattern: string, cb: () => void): void;
+
+			/**
+			 * Register an adapter instance as subscribable.
+			 * This means that the instance can read information about all subscriptions to its states
+			 * and will be notified of changes.
+			 * @param instance Adapter instance to register, e.g. "admin.0"
+			 * @param cb Is called when the operation has finished (successfully or not)
+			 */
+			registerAdapterSubs(instance: string, cb?: (error: null, success: boolean) => void): void;
+
+			/**
+			 * Unregister an adapter instance as subscribable.
+			 * @param instance Adapter instance to unregister, e.g. "admin.0"
+			 * @param cb Is called when the operation has finished (successfully or not)
+			 */
+			unregisterAdapterSubs(instance: string, cb?: (error: null, success: boolean) => void): void;
+
+			// TODO: Documentation for these functions is missing
+
+			/**
+			 * EDUCATED GUESS: Notify all clients about changes to an object
+			 * @param type object type
+			 * @param id State/object id
+			 * @param obj The changed object
+			 */
+			publishAll(type, id, obj);
+
+			// TODO: find out how this works
+			// Code starts at https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/states/statesInMemServer.js#L810
+			pushMessage(id, state, callback);
+			lenMessage(id, callback);
+			getMessage(id, callback);
+			delMessage(id, messageId, callback);
+			clearAllMessages(callback);
+			subscribeMessage(id, cb);
+			unsubscribeMessage(id, cb);
+
+			pushLog(id, log, callback);
+			lenLog(id, callback);
+			getLog(id, callback);
+			delLog(id, logId, callback);
+			clearAllLogs(callback);
+			subscribeLog(id, cb);
+			unsubscribeLog(id, cb);
+
+			getSession(id, callback);
+			setSession(id, expire, obj, callback);
+			destroySession(id, callback);
+			getConfig(id, callback);
+			getConfigKeys(pattern, callback, dontModify);
+			getConfigs(keys, callback, dontModify);
+			setConfig(id, obj, callback);
+			delConfig(id, callback);
+			subscribeConfig(pattern, cb);
+			unsubscribeConfig(pattern, cb);
+
+			setBinaryState(id, data, callback);
+			getBinaryState(id, callback);
+			delBinaryState(id, callback);
+
+			/** Destructor of the class. Call this before shutting down */
+			destroy(): void;
+
+		} // end interface States
 
 		type ObjectType = "state" | "channel" | "device";
 		type CommonType = "number" | "string" | "boolean" | "array" | "object" | "mixed" | "file";
@@ -272,7 +396,7 @@ declare global {
 			include_docs: boolean;
 		}
 
-		/** Provides low-level access to ioBroker objects */
+		/** Provides low-level access to the ioBroker objects db */
 		interface Objects {
 			/**
 			 * For a given user, returns the groups he belongs to, and his access rights
@@ -468,8 +592,8 @@ declare global {
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 * @param dontModify unused
 			 */
-			getConfigKeys(pattern: string, callback: GetConfigKeysCallback, dontModify: any): void;
-			getConfigKeys(pattern: string, options: any, callback: GetConfigKeysCallback, dontModify: any): void;
+			getConfigKeys(pattern: string, callback: GetConfigKeysCallback, dontModify?: any): void;
+			getConfigKeys(pattern: string, options: any, callback: GetConfigKeysCallback, dontModify?: any): void;
 
 			/**
 			 * Returns a list of objects with the given ids
@@ -478,8 +602,8 @@ declare global {
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 * @param dontModify unused
 			 */
-			getObjects(keys: string[], callback: GetObjectsCallback2, dontModify: any): void;
-			getObjects(keys: string[], options: any, callback: GetObjectsCallback2, dontModify: any): void;
+			getObjects(keys: string[], callback: GetObjectsCallback2, dontModify?: any): void;
+			getObjects(keys: string[], options: any, callback: GetObjectsCallback2, dontModify?: any): void;
 			/**
 			 * Returns a list of objects with the given ids
 			 * @param keys IDs of the objects to be retrieved
@@ -487,8 +611,8 @@ declare global {
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 * @param dontModify unused
 			 */
-			getConfigs(keys: string[], callback: GetObjectsCallback2, dontModify: any): void;
-			getConfigs(keys: string[], options: any, callback: GetObjectsCallback2, dontModify: any): void;
+			getConfigs(keys: string[], callback: GetObjectsCallback2, dontModify?: any): void;
+			getConfigs(keys: string[], options: any, callback: GetObjectsCallback2, dontModify?: any): void;
 
 			/**
 			 * Creates or overwrites an object in the object db
@@ -981,6 +1105,8 @@ declare global {
 
 		type GetStateCallback = (err: string, state: State) => void;
 		type GetStatesCallback = (err: string, states: DictionaryLike<State>) => void;
+		/** Version of the callback used by States.getStates */
+		type GetStates2Callback = (err: string, states: State[]) => void;
 		type SetStateCallback = (err: string, id: string) => void;
 		type SetStateChangedCallback = (err: string, id: string, notChanged: boolean) => void;
 		type DeleteStateCallback = (err: string, id?: string) => void;
