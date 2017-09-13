@@ -110,6 +110,7 @@ declare global {
 			enums?: DictionaryLike<string>;
 			type: "state";
 			common: StateCommon;
+			acl?: StateACL;
 		} | {
 			/** The ID of this object */
 			_id?: string;
@@ -117,6 +118,7 @@ declare global {
 			enums?: DictionaryLike<string>;
 			type: "channel";
 			common: ChannelCommon;
+			acl?: ObjectACL;
 		} | {
 			/** The ID of this object */
 			_id?: string;
@@ -124,27 +126,43 @@ declare global {
 			enums?: DictionaryLike<string>;
 			type: "device";
 			common: ObjectCommon; // TODO: any definition for device?
+			acl?: ObjectACL;
 		};
 
-		/** Defines access rights for a single object/file */
+		/** Defines access rights for a single file */
+		interface FileACL {
+			/** Full name of the user who owns this file, e.g. "system.user.admin" */
+			owner: string;
+			/** Full name of the group who owns this file, e.g. "system.group.administrator" */
+			ownerGroup: string;
+			/** Linux-type permissions defining access to this file */
+			permissions: number;
+		}
+		/** Defines access rights for a single file, applied to a user or group */
+		interface EvaluatedFileACL extends FileACL {
+			/** Whether the user may read the file */
+			read: boolean;
+			/** Whether the user may write the file */
+			write: boolean;
+		}
+
+		/** Defines access rights for a single object */
 		interface ObjectACL {
 			/** Full name of the user who owns this object, e.g. "system.user.admin" */
 			owner: string;
 			/** Full name of the group who owns this object, e.g. "system.group.administrator" */
 			ownerGroup: string;
 			/** Linux-type permissions defining access to this object */
-			permissions: number;
+			object: number;
 		}
-		/** Defines access rights for a single object/file, applied to a user or group */
-		interface EvaluatedObjectACL extends ObjectACL {
-			/** Whether the user may read the object/file */
-			read: boolean;
-			/** Whether the user may write the object/file */
-			write: boolean;
+		/** Defines access rights for a single state object */
+		interface StateACL extends ObjectACL {
+			/** Linux-type permissions defining access to this state */
+			state: number;
 		}
 
 		/** Defines access rights for a single object type */
-		interface ACLOperations {
+		interface ObjectOperationPermissions {
 			/** Whether a user may enumerate objects of this type */
 			list: boolean;
 			/** Whether a user may read objects of this type */
@@ -157,19 +175,19 @@ declare global {
 			"delete": boolean;
 		}
 
-		/** Defines the access rights a user or group has to change objects */
-		interface ObjectsACL {
+		/** Defines the rights a user or group has to change objects */
+		interface ObjectPermissions {
 			/** The access rights for files */
-			file: ACLOperations;
+			file: ObjectOperationPermissions;
 			/** The access rights for objects */
-			object: ACLOperations;
+			object: ObjectOperationPermissions;
 			/** The access rights for users/groups */
-			users: ACLOperations;
+			users: ObjectOperationPermissions;
+			/** The access rights for states */
+			state?: ObjectOperationPermissions;
 		}
 		/** Defined the complete set of access rights a user has */
-		interface ACL extends ObjectsACL {
-			/** The access rights for states */
-			state: ACLOperations;
+		interface PermissionSet extends ObjectPermissions {
 			/** The name of the user this ACL is for */
 			user: string;
 			/** The name of the groups this ACL was merged from */
@@ -237,7 +255,7 @@ declare global {
 			/** Which groups this user belongs to */
 			groups: UserGroup[];
 			/** Access rights of this user */
-			acl: ObjectsACL;
+			acl: ObjectPermissions;
 		}
 
 		/** Parameters for @link{Objects.getObjectView} */
@@ -723,8 +741,8 @@ declare global {
 			checkGroup(user: string, group: string, callback: (result: boolean) => void): void;
 			checkGroup(user: string, group: string, options: any, callback: (result: boolean) => void): void;
 			/** <INTERNAL> Determines the users permissions */
-			calculatePermissions(user: string, commandsPermissions: CommandsPermissions, callback: (result: ACL) => void): void;
-			calculatePermissions(user: string, commandsPermissions: CommandsPermissions, options: any, callback: (result: ACL) => void): void;
+			calculatePermissions(user: string, commandsPermissions: CommandsPermissions, callback: (result: PermissionSet) => void): void;
+			calculatePermissions(user: string, commandsPermissions: CommandsPermissions, options: any, callback: (result: PermissionSet) => void): void;
 			/** Returns SSL certificates by name (private key, public cert and chained certificate) for creation of HTTPS servers */
 			getCertificates(publicName: string, privateName: string, chainedName: string, callback: (err: string, certs?: Certificates, useLetsEncryptCert?: boolean) => void): void;
 
@@ -977,7 +995,7 @@ declare global {
 			/** Whether this is a directory or a file */
 			isDir: boolean;
 			/** Access rights */
-			acl: EvaluatedObjectACL;
+			acl: EvaluatedFileACL;
 			/** Date of last modification */
 			modifiedAt: number;
 			/** Date of creation */
@@ -987,7 +1005,7 @@ declare global {
 		type ReadFileCallback = (err: string, file?: Buffer | string, mimeType?: string) => void;
 
 		/** Contains the return values of chownFile */
-		interface ChownResult {
+		interface ChownFileResult {
 			/** The parent directory of the processed file or directory */
 			path: string;
 			/** Name of the file or directory */
@@ -997,13 +1015,13 @@ declare global {
 			/** Whether this is a directory or a file */
 			isDir: boolean;
 			/** Access rights */
-			acl: ObjectACL;
+			acl: FileACL;
 			/** Date of last modification */
 			modifiedAt: number;
 			/** Date of creation */
 			createdAt: number;
 		}
-		type ChownFileCallback = (err: string, entries?: ChownResult[], id?: string) => void;
+		type ChownFileCallback = (err: string, entries?: ChownFileResult[], id?: string) => void;
 
 		/** Contains the return values of rm */
 		interface RmResult {
@@ -1016,11 +1034,9 @@ declare global {
 		}
 		type RmCallback = (err: string, entries?: RmResult[]) => void;
 
-		type GetUserGroupCallback = (objectsInstance: Objects, user: User, groups: UserGroup[], acl: ObjectsACL) => void;
+		type GetUserGroupCallback = (objectsInstance: Objects, user: User, groups: UserGroup[], acl: ObjectPermissions) => void;
 
-		/** Contains the return values of chownObject */
-		type ChownObjectResult = any; // TODO: find out what this looks like
-		type ChownObjectCallback = (err: string, list?: ChownObjectResult[]) => void;
+		type ChownObjectCallback = (err: string, list?: ioBroker.Object[]) => void;
 
 		type GetConfigKeysCallback = (err: string, list?: string[]) => void;
 		// this is a version of the callback used by Objects.getObjects
