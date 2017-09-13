@@ -126,8 +126,25 @@ declare global {
 			common: ObjectCommon; // TODO: any definition for device?
 		};
 
+		/** Defines access rights for a single object/file */
+		interface ObjectACL {
+			/** Full name of the user who owns this object, e.g. "system.user.admin" */
+			owner: string;
+			/** Full name of the group who owns this object, e.g. "system.group.administrator" */
+			ownerGroup: string;
+			/** Linux-type permissions defining access to this object */
+			permissions: number;
+		}
+		/** Defines access rights for a single object/file, applied to a user or group */
+		interface EvaluatedObjectACL extends ObjectACL {
+			/** Whether the user may read the object/file */
+			read: boolean;
+			/** Whether the user may write the object/file */
+			write: boolean;
+		}
+
 		/** Defines access rights for a single object type */
-		interface ACLFragment {
+		interface ACLOperations {
 			/** Whether a user may enumerate objects of this type */
 			list: boolean;
 			/** Whether a user may read objects of this type */
@@ -143,16 +160,16 @@ declare global {
 		/** Defines the access rights a user or group has to change objects */
 		interface ObjectsACL {
 			/** The access rights for files */
-			file: ACLFragment;
+			file: ACLOperations;
 			/** The access rights for objects */
-			object: ACLFragment;
+			object: ACLOperations;
 			/** The access rights for users/groups */
-			users: ACLFragment;
+			users: ACLOperations;
 		}
 		/** Defined the complete set of access rights a user has */
 		interface ACL extends ObjectsACL {
 			/** The access rights for states */
-			state: ACLFragment;
+			state: ACLOperations;
 			/** The name of the user this ACL is for */
 			user: string;
 			/** The name of the groups this ACL was merged from */
@@ -960,7 +977,7 @@ declare global {
 			/** Whether this is a directory or a file */
 			isDir: boolean;
 			/** Access rights */
-			acl: any; // TODO: find out how this looks like
+			acl: EvaluatedObjectACL;
 			/** Date of last modification */
 			modifiedAt: number;
 			/** Date of creation */
@@ -980,7 +997,7 @@ declare global {
 			/** Whether this is a directory or a file */
 			isDir: boolean;
 			/** Access rights */
-			acl: any; // TODO: find out how this looks like
+			acl: ObjectACL;
 			/** Date of last modification */
 			modifiedAt: number;
 			/** Date of creation */
