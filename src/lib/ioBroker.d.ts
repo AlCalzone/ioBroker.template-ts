@@ -1,4 +1,4 @@
-﻿import fs = require("fs");
+import fs = require("fs");
 
 declare global {
 	namespace ioBroker {
@@ -50,9 +50,20 @@ declare global {
 		type ObjectType = "state" | "channel" | "device";
 		type CommonType = "number" | "string" | "boolean" | "array" | "object" | "mixed" | "file";
 
+		// Maybe this should extend DictionaryLike<any>,
+		// but the extra properties aren't defined anywhere,
+		// so I'd rather force the user to explicitly state
+		// he knows what he's doing by casting to any
 		interface ObjectCommon {
 			/** name of this object */
 			name: string;
+
+			// Icon and role aren't defined in SCHEMA.md,
+			// but they are being used by some adapters
+			/** Icon for this object */
+			icon?: string;
+			/** role of the object */
+			role?: string;
 		}
 
 		interface StateCommon extends ObjectCommon {
@@ -97,8 +108,6 @@ declare global {
 			history?: any;
 		}
 		interface ChannelCommon extends ObjectCommon {
-			/** role of the channel */
-			role?: string;
 			/** description of this channel */
 			desc?: string;
 		}
