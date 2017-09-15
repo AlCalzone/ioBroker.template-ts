@@ -129,11 +129,9 @@ declare global {
 			 * @param id State/object id
 			 * @param obj The changed object
 			 */
-			publishAll(type: string, id: string, obj: Message);
+			publishAll(type: string, id: string, obj: Message): void;
 
 			// TODO: Documentation for these functions is missing
-			// TODO: find out how this works
-			// Code starts at https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/states/statesInMemServer.js#L810
 			pushMessage(id: string, state: Message, callback: SetStateCallback): void;
 			lenMessage(id: string, callback: GenericCallback<number>): void;
 			getMessage(id: string, callback: GenericCallback<Message>): void;
@@ -150,16 +148,60 @@ declare global {
 			subscribeLog(id: string, cb: EmptyCallback): void;
 			unsubscribeLog(id: string, cb: EmptyCallback): void;
 
-			getSession(id, callback);
-			setSession(id, expire, obj, callback);
-			destroySession(id, callback);
-			getConfig(id, callback);
-			getConfigKeys(pattern, callback, dontModify);
-			getConfigs(keys, callback, dontModify);
-			setConfig(id, obj, callback);
-			delConfig(id, callback);
-			subscribeConfig(pattern, cb);
-			unsubscribeConfig(pattern, cb);
+			getSession(id: string, callback: GetSessionCallback): void;
+			setSession(id: string, expire: number, callback?: EmptyCallback): void;
+			setSession(id: string, expire: number, obj: Session, callback?: EmptyCallback): void;
+			destroySession(id: string, callback?: EmptyCallback): void;
+
+			/**
+			 * Retrieves a copy of the object with the given ID
+			 * @param id Id of the object to find
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getConfig(id: string, callback: GetObjectCallback): void;
+
+			/**
+			 * Returns a list of config keys matching <pattern>
+			 * @param pattern Pattern to match against
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 * @param dontModify unused
+			 */
+			getConfigKeys(pattern: string, callback: GetConfigKeysCallback, dontModify?: any): void;
+
+			/**
+			 * Returns a list of objects with the given ids
+			 * @param keys IDs of the objects to be retrieved
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 * @param dontModify unused
+			 */
+			getConfigs(keys: string[], callback: GetObjectsCallback2, dontModify?: any): void;
+
+			/**
+			 * Creates or overwrites a config object in the object db
+			 * @param id ID of the object
+			 * @param obj Object to store
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			setConfig(id: string, obj: ioBroker.Object, callback: SetObjectCallback): void;
+
+			/**
+			 * Deletes a config object in the object db
+			 * @param id ID of the object
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			delConfig(id: string, callback: ErrorCallback): void;
+
+			/**
+			 * Subscribe to config object changes
+			 * @param pattern The pattern to match against
+			 */
+			subscribeConfig(pattern: string, callback: EmptyCallback): void;
+
+			/**
+			 * Unsubscribe from config object changes
+			 * @param pattern The pattern to match against
+			 */
+			unsubscribeConfig(pattern: string, callback: EmptyCallback): void;
 
 			/**
 			 * Writes a binary state into Redis
@@ -187,6 +229,8 @@ declare global {
 			destroy(): void;
 
 		} // end interface States
+
+		type Session = any; // TODO: implement
 
 		type ObjectType = "state" | "channel" | "device";
 		type CommonType = "number" | "string" | "boolean" | "array" | "object" | "mixed" | "file";
@@ -1298,6 +1342,8 @@ declare global {
 		type GetObjectListCallback = (err: string | null, result?: { rows: GetObjectListItem[] }) => void;
 
 		type ExtendObjectCallback = (err: string | null, result?: {id: string, value: ioBroker.Object}, id?: string ) => void;
+
+		type GetSessionCallback = (session: Session) => void;
 
 	} // end namespace ioBroker
 } // end declare global
