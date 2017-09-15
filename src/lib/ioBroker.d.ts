@@ -112,31 +112,29 @@ declare global {
 			desc?: string;
 		}
 
-		type Object = {
+		interface BaseObject {
 			/** The ID of this object */
 			_id?: string;
 			native: DictionaryLike<any>;
 			enums?: DictionaryLike<string>;
+			type: string; // specified in the derived interfaces
+			common: ObjectCommon;
+			acl?: ObjectACL;
+		}
+		interface StateObject extends BaseObject {
 			type: "state";
 			common: StateCommon;
 			acl?: StateACL;
-		} | {
-			/** The ID of this object */
-			_id?: string;
-			native: DictionaryLike<any>;
-			enums?: DictionaryLike<string>;
+		}
+		interface ChannelObject extends BaseObject {
 			type: "channel";
 			common: ChannelCommon;
-			acl?: ObjectACL;
-		} | {
-			/** The ID of this object */
-			_id?: string;
-			native: DictionaryLike<any>;
-			enums?: DictionaryLike<string>;
+		}
+		interface DeviceObject extends BaseObject {
 			type: "device";
 			common: ObjectCommon; // TODO: any definition for device?
-			acl?: ObjectACL;
-		};
+		}
+		type Object = StateObject | ChannelObject | DeviceObject;
 
 		/** Defines access rights for a single file */
 		interface FileACL {
@@ -738,6 +736,9 @@ declare global {
 			 */
 			getPort(port: number, callback: (port: number) => void): void;
 
+			/** Stops the adapter. Note: Is not always defined. */
+			stop?: () => void;
+
 			// ==============================
 			// GENERAL
 
@@ -753,7 +754,7 @@ declare global {
 			calculatePermissions(user: string, commandsPermissions: CommandsPermissions, callback: (result: PermissionSet) => void): void;
 			calculatePermissions(user: string, commandsPermissions: CommandsPermissions, options: any, callback: (result: PermissionSet) => void): void;
 			/** Returns SSL certificates by name (private key, public cert and chained certificate) for creation of HTTPS servers */
-			getCertificates(publicName: string, privateName: string, chainedName: string, callback: (err: string, certs?: Certificates, useLetsEncryptCert?: boolean) => void): void;
+			getCertificates(publicName: string, privateName: string, chainedName: string, callback: (err: string | null, certs?: Certificates, useLetsEncryptCert?: boolean) => void): void;
 
 			/**
 			 * Sends a message to a specific instance or all instances of some specific adapter.
@@ -860,6 +861,30 @@ declare global {
 
 			getHistory(id: string, options: GetHistoryOptions, callback: GetHistoryCallback): void;
 
+			// MISSING:
+			// pushFifo and similar https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/adapter.js#L4105
+			// logRedirect https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/adapter.js#L4294
+			// requireLog https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/adapter.js#L4336
+			// processLog https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/adapter.js#L4360
+
+			/**
+			 * Writes a binary state into Redis
+			 * @param id The id of the state
+			 * @param binary The data to be written
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			setBinaryState(id: string, binary: Buffer, callback: SetStateCallback): void;
+			setBinaryState(id: string, binary: Buffer, options: any, callback: SetStateCallback): void;
+			/**
+			 * Reads a binary state from Redis
+			 * @param id The id of the state
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getBinaryState(id: string, callback: GetBinaryStateCallback): void;
+			getBinaryState(id: string, options: any, callback: GetBinaryStateCallback): void;
+
 			// ==============================
 			// enums
 
@@ -872,11 +897,9 @@ declare global {
 			getEnums(enumList: EnumList, options: any, callback: GetEnumsCallback): void;
 
 			addChannelToEnum(enumName: string, addTo: string, parentDevice: string, channelName: string, options?: any, callback?: GenericCallback): void;
-
 			deleteChannelFromEnum(enumName: string, parentDevice: string, channelName: string, options?: any, callback?: GenericCallback): void;
 
 			addStateToEnum(enumName: string, addTo: string, parentDevice: string, parentChannel: string, stateName: string, options?: any, callback?: GenericCallback): void;
-
 			deleteStateFromEnum(enumName: string, parentDevice: string, parentChannel: string, stateName: string, options?: any, callback?: GenericCallback): void;
 
 			// ==============================
@@ -928,6 +951,45 @@ declare global {
 			deleteState(parentChannel: string, stateName: string, options?: any, callback?: GenericCallback): void;
 			deleteState(parentDevice: string, parentChannel: string, stateName: string, options?: any, callback?: GenericCallback): void;
 
+			/**
+			 * Returns a list of all devices in this adapter instance
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getDevices(callback: GetObjectsCallback3<DeviceObject>): void;
+			getDevices(options: any, callback: GetObjectsCallback3<DeviceObject>): void;
+
+			/**
+			 * Returns a list of all channels in this adapter instance
+			 * @param parentDevice (optional) Name of the parent device to filter the channels by
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getChannels(callback: GetObjectsCallback3<ChannelObject>): void;
+			getChannels(parentDevice: string | null, callback: GetObjectsCallback3<ChannelObject>): void;
+			getChannels(parentDevice: string | null, options: any, callback: GetObjectsCallback3<ChannelObject>): void;
+			/**
+			 * Returns a list of all channels in this adapter instance
+			 * @param parentDevice (optional) Name of the parent device to filter the channels by
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getChannelsOf(callback: GetObjectsCallback3<ChannelObject>): void;
+			getChannelsOf(parentDevice: string | null, callback: GetObjectsCallback3<ChannelObject>): void;
+			getChannelsOf(parentDevice: string | null, options: any, callback: GetObjectsCallback3<ChannelObject>): void;
+
+			/**
+			 * Returns a list of all states in this adapter instance
+			 * @param parentDevice (optional) Name of the parent device to filter the channels by
+			 * @param parentChannel (optional) Name of the parent channel to filter the channels by
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getStatesOf(callback: GetObjectsCallback3<StateObject>): void;
+			getStatesOf(parentDevice: string | null, callback: GetObjectsCallback3<StateObject>): void;
+			getStatesOf(parentDevice: string | null, parentChannel: string | null, callback: GetObjectsCallback3<StateObject>): void;
+			getStatesOf(parentDevice: string | null, parentChannel: string | null, options: any, callback: GetObjectsCallback3<StateObject>): void;
+
 			// ==============================
 			// filesystem
 
@@ -954,6 +1016,15 @@ declare global {
 			rename(adapterName: string, oldName: string, newName: string, callback: GenericCallback): void;
 			rename(adapterName: string, oldName: string, newName: string, options: any, callback: GenericCallback): void;
 
+			/**
+			 * Changes access rights of all files in the adapter directory
+			 * @param adapter Name of the adapter instance, e.g. "admin.0". Defaults to the namespace of this adapter.
+			 * @param path Pattern to match the file path against
+			 * @param options Mode of the access change as a number or hexadecimal string
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			chmodFile(adapter: string | null, path: string, options: {mode: number | string} | DictionaryLike<any>, callback: ChownFileCallback): void;
+
 			// ==============================
 			// formatting
 
@@ -967,33 +1038,43 @@ declare global {
 		type StateChangeHandler = (id: string, obj: State) => void;
 		type MessageHandler = (obj: Message) => void;
 
-		type SetObjectCallback = (err: string, obj: { id: string }) => void;
-		type GetObjectCallback = (err: string, obj: ioBroker.Object) => void;
+		type SetObjectCallback = (err: string | null, obj: { id: string }) => void;
+		type GetObjectCallback = (err: string | null, obj: ioBroker.Object) => void;
 		type GenericCallback = (err?: string) => void;
-		type GetEnumCallback = (err: string, enums: DictionaryLike<Enum>, requestedEnum: string) => void;
+		type GetEnumCallback = (err: string | null, enums: DictionaryLike<Enum>, requestedEnum: string) => void;
 		type GetEnumsCallback = (
-			err: string,
+			err: string | null,
 			result: {
 				[groupName: string]: DictionaryLike<Enum>,
 			},
 		) => void;
-		type GetObjectsCallback = (err: string, objects: DictionaryLike<ioBroker.Object>) => void;
+		type GetObjectsCallback = (err: string | null, objects: DictionaryLike<ioBroker.Object>) => void;
 
 		type FindObjectCallback = (
 			/** If an error happened, this contains the message */
-			err: string,
+			err: string | null,
 			/** If an object was found, this contains the ID */
 			id?: string,
 			/** If an object was found, this contains the common.name */
 			name?: string,
 		) => void;
 
-		type GetStateCallback = (err: string, state: State) => void;
-		type GetStatesCallback = (err: string, states: DictionaryLike<State>) => void;
-		type SetStateCallback = (err: string, id: string) => void;
-		type SetStateChangedCallback = (err: string, id: string, notChanged: boolean) => void;
-		type DeleteStateCallback = (err: string, id?: string) => void;
-		type GetHistoryCallback = (err: string, result: (State & { id?: string })[], step: number, sessionId?: string) => void;
+		interface GetObjectsItem<T extends BaseObject> {
+			/** The ID of this object */
+			id: string;
+			/** A copy of the object from the DB */
+			value: T;
+		}
+		// This is a version used by GetDevices/GetChannelsOf/GetStatesOf
+		type GetObjectsCallback3<T extends BaseObject> = (err: string | null, result?: GetObjectsItem<T>[]) => void;
+
+		type GetStateCallback = (err: string | null, state: State) => void;
+		type GetStatesCallback = (err: string | null, states: DictionaryLike<State>) => void;
+		type GetBinaryStateCallback = (err: string | null, state?: Buffer) => void;
+		type SetStateCallback = (err: string | null, id?: string) => void;
+		type SetStateChangedCallback = (err: string | null, id: string, notChanged: boolean) => void;
+		type DeleteStateCallback = (err: string | null, id?: string) => void;
+		type GetHistoryCallback = (err: string | null, result: (State & { id?: string })[], step: number, sessionId?: string) => void;
 
 		/** Contains the return values of readDir */
 		interface ReadDirResult {
@@ -1010,8 +1091,8 @@ declare global {
 			/** Date of creation */
 			createdAt: number;
 		}
-		type ReadDirCallback = (err: string, entries?: ReadDirResult[]) => void;
-		type ReadFileCallback = (err: string, file?: Buffer | string, mimeType?: string) => void;
+		type ReadDirCallback = (err: string | null, entries?: ReadDirResult[]) => void;
+		type ReadFileCallback = (err: string | null, file?: Buffer | string, mimeType?: string) => void;
 
 		/** Contains the return values of chownFile */
 		interface ChownFileResult {
@@ -1030,7 +1111,7 @@ declare global {
 			/** Date of creation */
 			createdAt: number;
 		}
-		type ChownFileCallback = (err: string, entries?: ChownFileResult[], id?: string) => void;
+		type ChownFileCallback = (err: string | null, entries?: ChownFileResult[], id?: string) => void;
 
 		/** Contains the return values of rm */
 		interface RmResult {
@@ -1041,15 +1122,15 @@ declare global {
 			/** Whether the deleted object was a directory or a file */
 			isDir: boolean;
 		}
-		type RmCallback = (err: string, entries?: RmResult[]) => void;
+		type RmCallback = (err: string | null, entries?: RmResult[]) => void;
 
 		type GetUserGroupCallback = (objectsInstance: Objects, user: User, groups: UserGroup[], acl: ObjectPermissions) => void;
 
-		type ChownObjectCallback = (err: string, list?: ioBroker.Object[]) => void;
+		type ChownObjectCallback = (err: string | null, list?: ioBroker.Object[]) => void;
 
-		type GetConfigKeysCallback = (err: string, list?: string[]) => void;
+		type GetConfigKeysCallback = (err: string | null, list?: string[]) => void;
 		// this is a version of the callback used by Objects.getObjects
-		type GetObjectsCallback2 = (err: string, objects?: (ioBroker.Object | { err: string })[]) => void;
+		type GetObjectsCallback2 = (err: string | null, objects?: (ioBroker.Object | { err: string })[]) => void;
 
 		interface GetObjectViewItem {
 			/** The ID of this object */
@@ -1057,7 +1138,7 @@ declare global {
 			/** A copy of the object from the DB or some aggregation result */
 			value: ioBroker.Object | any;
 		}
-		type GetObjectViewCallback = (err: string, result?: { rows: GetObjectViewItem[] }) => void;
+		type GetObjectViewCallback = (err: string | null, result?: { rows: GetObjectViewItem[] }) => void;
 
 		interface GetObjectListItem extends GetObjectViewItem {
 			/** A copy of the object */
@@ -1065,9 +1146,9 @@ declare global {
 			/** The same as @link{value} */
 			doc: ioBroker.Object;
 		}
-		type GetObjectListCallback = (err: string, result?: { rows: GetObjectListItem[] }) => void;
+		type GetObjectListCallback = (err: string | null, result?: { rows: GetObjectListItem[] }) => void;
 
-		type ExtendObjectCallback = (err: string, result?: {id: string, value: ioBroker.Object}, id?: string ) => void;
+		type ExtendObjectCallback = (err: string | null, result?: {id: string, value: ioBroker.Object}, id?: string ) => void;
 
 	} // end namespace ioBroker
 } // end declare global
