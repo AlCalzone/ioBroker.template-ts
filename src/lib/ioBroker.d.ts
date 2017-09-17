@@ -1,5 +1,6 @@
 import fs = require("fs");
 
+// tslint:disable:no-namespace
 declare global {
 	namespace ioBroker {
 
@@ -296,6 +297,9 @@ declare global {
 			/** description of this channel */
 			desc?: string;
 		}
+		type OtherCommon = ObjectCommon & {
+			[propName: string]: any;
+		};
 
 		interface BaseObject {
 			/** The ID of this object */
@@ -306,20 +310,43 @@ declare global {
 			common: ObjectCommon;
 			acl?: ObjectACL;
 		}
+
 		interface StateObject extends BaseObject {
 			type: "state";
 			common: StateCommon;
 			acl?: StateACL;
 		}
+		interface PartialStateObject extends Partial<Pick<StateObject, "_id" | "native" | "enums" | "type">> {
+			common?: Partial<StateCommon>;
+			acl?: Partial<StateACL>;
+		}
+
 		interface ChannelObject extends BaseObject {
 			type: "channel";
 			common: ChannelCommon;
 		}
+		interface PartialChannelObject extends Partial<Pick<ChannelObject, "_id" | "native" | "enums" | "type" | "acl">> {
+			common?: Partial<ChannelCommon>;
+		}
+
 		interface DeviceObject extends BaseObject {
 			type: "device";
 			common: ObjectCommon; // TODO: any definition for device?
 		}
-		type Object = StateObject | ChannelObject | DeviceObject;
+		interface PartialDeviceObject extends Partial<Pick<DeviceObject, "_id" | "native" | "enums" | "type" | "acl">> {
+			common?: Partial<ObjectCommon>;
+		}
+
+		interface OtherObject extends BaseObject {
+			type: "adapter" | "config" | "enum" | "group" | "host" | "info" | "instance" | "meta" | "script" | "user";
+			common: OtherCommon;
+		}
+		interface PartialOtherObject extends Partial<Pick<OtherObject, "_id" | "native" | "enums" | "type" | "acl">> {
+			common?: Partial<ObjectCommon>;
+		}
+
+		type Object = StateObject | ChannelObject | DeviceObject | OtherObject;
+		type PartialObject = PartialStateObject | PartialChannelObject | PartialDeviceObject | PartialOtherObject;
 
 		/** Defines access rights for a single file */
 		interface FileACL {
@@ -747,8 +774,8 @@ declare global {
 			 * @param options (optional) Some internal options.
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
-			extendObject(id: string, obj: Partial<ioBroker.Object>, callback: ExtendObjectCallback): void;
-			extendObject(id: string, obj: Partial<ioBroker.Object>, options: any, callback: ExtendObjectCallback): void;
+			extendObject(id: string, obj: PartialObject, callback: ExtendObjectCallback): void;
+			extendObject(id: string, obj: PartialObject, options: any, callback: ExtendObjectCallback): void;
 
 			/**
 			 * Finds an object by ID or name. If multiple objects were found, return the first one
@@ -977,7 +1004,7 @@ declare global {
 			/** Get all states, channels and devices of this adapter */
 			getAdapterObjects(callback: (objects: DictionaryLike<ioBroker.Object>) => void): void;
 			/** Extend an object and create it if it might not exist */
-			extendObject(id: string, objPart: Partial<ioBroker.Object>, options?: any, callback?: SetObjectCallback): void;
+			extendObject(id: string, objPart: PartialObject, options?: any, callback?: SetObjectCallback): void;
 			/**
 			 * Deletes an object from the object db
 			 * @param id - The id of the object without namespace
@@ -1003,7 +1030,7 @@ declare global {
 			/** Creates an object (which might not belong to this adapter) in the object db. Existing objects are not overwritten. */
 			setForeignObjectNotExists(id: string, obj: ioBroker.Object, options?: any, callback?: SetObjectCallback): void;
 			/** Extend an object (which might not belong to this adapter) and create it if it might not exist */
-			extendForeignObject(id: string, objPart: Partial<ioBroker.Object>, options?: any, callback?: SetObjectCallback): void;
+			extendForeignObject(id: string, objPart: PartialObject, options?: any, callback?: SetObjectCallback): void;
 			// tslint:enable:unified-signatures
 			/**
 			 * Finds an object by its ID or name
