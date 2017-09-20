@@ -803,6 +803,9 @@ declare global {
 			warn(message: string): void;
 			/** log message with error severity */
 			error(message: string): void;
+
+			/** Verbosity of the log output */
+			level: "info" | "debug" | "warn" | "error";
 		}
 
 		interface Certificates {
