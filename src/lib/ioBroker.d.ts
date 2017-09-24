@@ -1,5 +1,6 @@
 import fs = require("fs");
 
+// tslint:disable:no-namespace
 declare global {
 	namespace ioBroker {
 
@@ -45,7 +46,192 @@ declare global {
 			c?: string;
 		}
 
-		type States = any; // TODO implement
+		/** Provides low-level access to the ioBroker states DB */
+		interface States {
+
+			/**
+			 * Returns a list of states with the given ids
+			 * @param keys IDs of the states to be retrieved
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 * @param dontModify unused
+			 */
+			getStates(keys: string[], callback: GetStatesCallback2, dontModify?: any): void;
+
+			/**
+			 * Returns the state with the given id
+			 * @param id ID of the state to be retrieved
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getState(id: string, callback: GetStateCallback): void;
+
+			/**
+			 * Stores a state in the db
+			 * @param id ID of the state to be stored
+			 * @param state The state to be stored in the db
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			setState(id: string, state?: string | number | boolean | State | Partial<State>, callback?: SetStateCallback): void;
+
+			/**
+			 * Updates a state in memory without triggering a save
+			 * @param id ID of the state to be stored
+			 * @param state The state to be updated
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			setRawState(id: string, state: State, callback?: SetStateCallback): void;
+
+			/**
+			 * Deletes a state
+			 * @param id ID of the state to be stored
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			delState(id: string, callback: DeleteStateCallback): void;
+
+			/**
+			 * Retrieves all ids of states matching @link{pattern}
+			 * @param pattern The pattern to match against
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 * @param dontModify unused
+			 */
+			getKeys(pattern: string, callback: GetConfigKeysCallback, dontModify?: any): void;
+
+			/**
+			 * Subscribe to changes of all states matching @link{pattern}
+			 * @param pattern The pattern to match against
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			subscribe(pattern: string, cb: EmptyCallback): void;
+			/**
+			 * Unsubscribe from changes of all states matching @link{pattern}
+			 * @param pattern The pattern to match against
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			unsubscribe(pattern: string, cb: EmptyCallback): void;
+
+			/**
+			 * Register an adapter instance as subscribable.
+			 * This means that the instance can read information about all subscriptions to its states
+			 * and will be notified of changes.
+			 * @param instance Adapter instance to register, e.g. "admin.0"
+			 * @param cb Is called when the operation has finished (successfully or not)
+			 */
+			registerAdapterSubs(instance: string, cb?: (error: null, success: boolean) => void): void;
+
+			/**
+			 * Unregister an adapter instance as subscribable.
+			 * @param instance Adapter instance to unregister, e.g. "admin.0"
+			 * @param cb Is called when the operation has finished (successfully or not)
+			 */
+			unregisterAdapterSubs(instance: string, cb?: (error: null, success: boolean) => void): void;
+
+			/**
+			 * EDUCATED GUESS: Notify all clients about changes to an object
+			 * @param type object type
+			 * @param id State/object id
+			 * @param obj The changed object
+			 */
+			publishAll(type: string, id: string, obj: Message): void;
+
+			// TODO: Documentation for these functions is missing
+			pushMessage(id: string, state: Message, callback: SetStateCallback): void;
+			lenMessage(id: string, callback: GenericCallback<number>): void;
+			getMessage(id: string, callback: GenericCallback<Message>): void;
+			delMessage(id: string, messageId: number, callback: ErrorCallback): void;
+			clearAllMessages(callback?: EmptyCallback): void;
+			subscribeMessage(id: string, cb: EmptyCallback): void;
+			unsubscribeMessage(id: string, cb: EmptyCallback): void;
+
+			pushLog(id: string, log: Log, callback: SetStateCallback): void;
+			lenLog(id: string, callback: GenericCallback<number>): void;
+			getLog(id: string, callback: GenericCallback<Log>): void;
+			delLog(id: string, logId: string, callback: ErrorCallback): void;
+			clearAllLogs(callback?: EmptyCallback): void;
+			subscribeLog(id: string, cb: EmptyCallback): void;
+			unsubscribeLog(id: string, cb: EmptyCallback): void;
+
+			getSession(id: string, callback: GetSessionCallback): void;
+			setSession(id: string, expire: number, callback?: EmptyCallback): void;
+			setSession(id: string, expire: number, obj: Session, callback?: EmptyCallback): void;
+			destroySession(id: string, callback?: EmptyCallback): void;
+
+			/**
+			 * Retrieves a copy of the object with the given ID
+			 * @param id Id of the object to find
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getConfig(id: string, callback: GetObjectCallback): void;
+
+			/**
+			 * Returns a list of config keys matching <pattern>
+			 * @param pattern Pattern to match against
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 * @param dontModify unused
+			 */
+			getConfigKeys(pattern: string, callback: GetConfigKeysCallback, dontModify?: any): void;
+
+			/**
+			 * Returns a list of objects with the given ids
+			 * @param keys IDs of the objects to be retrieved
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 * @param dontModify unused
+			 */
+			getConfigs(keys: string[], callback: GetObjectsCallback2, dontModify?: any): void;
+
+			/**
+			 * Creates or overwrites a config object in the object db
+			 * @param id ID of the object
+			 * @param obj Object to store
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			setConfig(id: string, obj: ioBroker.Object, callback: SetObjectCallback): void;
+
+			/**
+			 * Deletes a config object in the object db
+			 * @param id ID of the object
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			delConfig(id: string, callback: ErrorCallback): void;
+
+			/**
+			 * Subscribe to config object changes
+			 * @param pattern The pattern to match against
+			 */
+			subscribeConfig(pattern: string, callback: EmptyCallback): void;
+
+			/**
+			 * Unsubscribe from config object changes
+			 * @param pattern The pattern to match against
+			 */
+			unsubscribeConfig(pattern: string, callback: EmptyCallback): void;
+
+			/**
+			 * Writes a binary state into Redis
+			 * @param id The id of the state
+			 * @param data The data to be written
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			setBinaryState(id: string, data: Buffer, callback: SetStateCallback): void;
+
+			/**
+			 * Reads a binary state from Redis
+			 * @param id The id of the state
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getBinaryState(id: string, callback: GetBinaryStateCallback): void;
+
+			/**
+			 * Deletes a binary state from Redis
+			 * @param id The id of the state to be deleted
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			delBinaryState(id: string, callback: DeleteStateCallback): void;
+
+			/** Destructor of the class. Call this before shutting down */
+			destroy(): void;
+
+		} // end interface States
+
+		type Session = any; // TODO: implement
 
 		type ObjectType = "state" | "channel" | "device";
 		type CommonType = "number" | "string" | "boolean" | "array" | "object" | "mixed" | "file";
@@ -111,6 +297,9 @@ declare global {
 			/** description of this channel */
 			desc?: string;
 		}
+		type OtherCommon = ObjectCommon & {
+			[propName: string]: any;
+		};
 
 		interface BaseObject {
 			/** The ID of this object */
@@ -121,20 +310,43 @@ declare global {
 			common: ObjectCommon;
 			acl?: ObjectACL;
 		}
+
 		interface StateObject extends BaseObject {
 			type: "state";
 			common: StateCommon;
 			acl?: StateACL;
 		}
+		interface PartialStateObject extends Partial<Pick<StateObject, "_id" | "native" | "enums" | "type">> {
+			common?: Partial<StateCommon>;
+			acl?: Partial<StateACL>;
+		}
+
 		interface ChannelObject extends BaseObject {
 			type: "channel";
 			common: ChannelCommon;
 		}
+		interface PartialChannelObject extends Partial<Pick<ChannelObject, "_id" | "native" | "enums" | "type" | "acl">> {
+			common?: Partial<ChannelCommon>;
+		}
+
 		interface DeviceObject extends BaseObject {
 			type: "device";
 			common: ObjectCommon; // TODO: any definition for device?
 		}
-		type Object = StateObject | ChannelObject | DeviceObject;
+		interface PartialDeviceObject extends Partial<Pick<DeviceObject, "_id" | "native" | "enums" | "type" | "acl">> {
+			common?: Partial<ObjectCommon>;
+		}
+
+		interface OtherObject extends BaseObject {
+			type: "adapter" | "config" | "enum" | "group" | "host" | "info" | "instance" | "meta" | "script" | "user";
+			common: OtherCommon;
+		}
+		interface PartialOtherObject extends Partial<Pick<OtherObject, "_id" | "native" | "enums" | "type" | "acl">> {
+			common?: Partial<ObjectCommon>;
+		}
+
+		type Object = StateObject | ChannelObject | DeviceObject | OtherObject;
+		type PartialObject = PartialStateObject | PartialChannelObject | PartialDeviceObject | PartialOtherObject;
 
 		/** Defines access rights for a single file */
 		interface FileACL {
@@ -279,7 +491,7 @@ declare global {
 			include_docs: boolean;
 		}
 
-		/** Provides low-level access to ioBroker objects */
+		/** Provides low-level access to the ioBroker objects db */
 		interface Objects {
 			/**
 			 * For a given user, returns the groups he belongs to, and his access rights
@@ -302,8 +514,8 @@ declare global {
 			 * @param options (optional) MIME type of the file (string). Or some internal options.
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
-			writeFile(id: string, name: string, data: Buffer | string, callback: GenericCallback): void;
-			writeFile(id: string, name: string, data: Buffer | string, options: string | any, callback: GenericCallback): void;
+			writeFile(id: string, name: string, data: Buffer | string, callback: ErrorCallback): void;
+			writeFile(id: string, name: string, data: Buffer | string, options: string | any, callback: ErrorCallback): void;
 
 			/**
 			 * Reads a file.
@@ -322,8 +534,8 @@ declare global {
 			 * @param options (optional) Some internal options.
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
-			unlink(id: string, name: string, callback: GenericCallback): void;
-			unlink(id: string, name: string, options: any, callback: GenericCallback): void;
+			unlink(id: string, name: string, callback: ErrorCallback): void;
+			unlink(id: string, name: string, options: any, callback: ErrorCallback): void;
 			/**
 			 * Deletes a file.
 			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
@@ -331,8 +543,8 @@ declare global {
 			 * @param options (optional) Some internal options.
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
-			delFile(id: string, name: string, callback: GenericCallback): void;
-			delFile(id: string, name: string, options: any, callback: GenericCallback): void;
+			delFile(id: string, name: string, callback: ErrorCallback): void;
+			delFile(id: string, name: string, options: any, callback: ErrorCallback): void;
 
 			/**
 			 * Finds all files and directories starting with <name>
@@ -352,8 +564,8 @@ declare global {
 			 * @param options (optional) Some internal options.
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
-			rename(id: string, oldName: string, newName: string, callback: GenericCallback): void;
-			rename(id: string, oldName: string, newName: string, options: any, callback: GenericCallback): void;
+			rename(id: string, oldName: string, newName: string, callback: ErrorCallback): void;
+			rename(id: string, oldName: string, newName: string, options: any, callback: ErrorCallback): void;
 
 			/**
 			 * Creates an empty file with the given name
@@ -362,8 +574,8 @@ declare global {
 			 * @param options (optional) Some internal options.
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
-			touch(id: string, name: string, callback: GenericCallback): void;
-			touch(id: string, name: string, options: any, callback: GenericCallback): void;
+			touch(id: string, name: string, callback: ErrorCallback): void;
+			touch(id: string, name: string, options: any, callback: ErrorCallback): void;
 
 			/**
 			 * Deletes all files in the root directory matching <name>
@@ -382,8 +594,8 @@ declare global {
 			 * @param options (optional) Some internal options.
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
-			mkDir(id: string, name: string, callback: GenericCallback): void;
-			mkDir(id: string, name: string, options: any, callback: GenericCallback): void;
+			mkDir(id: string, name: string, callback: ErrorCallback): void;
+			mkDir(id: string, name: string, options: any, callback: ErrorCallback): void;
 
 			/**
 			 * Takes possession all files in the root directory matching <name>
@@ -411,27 +623,27 @@ declare global {
 			 * Subscribe to object changes
 			 * @param pattern The pattern to match against
 			 */
-			subscribeConfig(pattern: string, callback: () => void): void;
-			subscribeConfig(pattern: string, options: any, callback: () => void): void;
+			subscribeConfig(pattern: string, callback: EmptyCallback): void;
+			subscribeConfig(pattern: string, options: any, callback: EmptyCallback): void;
 			/**
 			 * Subscribe to object changes
 			 * @param pattern The pattern to match against
 			 */
-			subscribe(pattern: string, callback: () => void): void;
-			subscribe(pattern: string, options: any, callback: () => void): void;
+			subscribe(pattern: string, callback: EmptyCallback): void;
+			subscribe(pattern: string, options: any, callback: EmptyCallback): void;
 
 			/**
 			 * Unsubscribe from object changes
 			 * @param pattern The pattern to match against
 			 */
-			unsubscribeConfig(pattern: string, callback: () => void): void;
-			unsubscribeConfig(pattern: string, options: any, callback: () => void): void;
+			unsubscribeConfig(pattern: string, callback: EmptyCallback): void;
+			unsubscribeConfig(pattern: string, options: any, callback: EmptyCallback): void;
 			/**
 			 * Unsubscribe from object changes
 			 * @param pattern The pattern to match against
 			 */
-			unsubscribe(pattern: string, callback: () => void): void;
-			unsubscribe(pattern: string, options: any, callback: () => void): void;
+			unsubscribe(pattern: string, callback: EmptyCallback): void;
+			unsubscribe(pattern: string, options: any, callback: EmptyCallback): void;
 
 			/**
 			 * Takes possession of all objects matching <pattern>
@@ -475,8 +687,8 @@ declare global {
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 * @param dontModify unused
 			 */
-			getConfigKeys(pattern: string, callback: GetConfigKeysCallback, dontModify: any): void;
-			getConfigKeys(pattern: string, options: any, callback: GetConfigKeysCallback, dontModify: any): void;
+			getConfigKeys(pattern: string, callback: GetConfigKeysCallback, dontModify?: any): void;
+			getConfigKeys(pattern: string, options: any, callback: GetConfigKeysCallback, dontModify?: any): void;
 
 			/**
 			 * Returns a list of objects with the given ids
@@ -485,8 +697,8 @@ declare global {
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 * @param dontModify unused
 			 */
-			getObjects(keys: string[], callback: GetObjectsCallback2, dontModify: any): void;
-			getObjects(keys: string[], options: any, callback: GetObjectsCallback2, dontModify: any): void;
+			getObjects(keys: string[], callback: GetObjectsCallback2, dontModify?: any): void;
+			getObjects(keys: string[], options: any, callback: GetObjectsCallback2, dontModify?: any): void;
 			/**
 			 * Returns a list of objects with the given ids
 			 * @param keys IDs of the objects to be retrieved
@@ -494,8 +706,8 @@ declare global {
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 * @param dontModify unused
 			 */
-			getConfigs(keys: string[], callback: GetObjectsCallback2, dontModify: any): void;
-			getConfigs(keys: string[], options: any, callback: GetObjectsCallback2, dontModify: any): void;
+			getConfigs(keys: string[], callback: GetObjectsCallback2, dontModify?: any): void;
+			getConfigs(keys: string[], options: any, callback: GetObjectsCallback2, dontModify?: any): void;
 
 			/**
 			 * Creates or overwrites an object in the object db
@@ -522,16 +734,16 @@ declare global {
 			 * @param options (optional) Some internal options.
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
-			delObject(id: string, callback: GenericCallback): void;
-			delObject(id: string, options: any, callback: GenericCallback): void;
+			delObject(id: string, callback: ErrorCallback): void;
+			delObject(id: string, options: any, callback: ErrorCallback): void;
 			/**
 			 * Deletes an object in the object db
 			 * @param id ID of the object
 			 * @param options (optional) Some internal options.
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
-			delConfig(id: string, callback: GenericCallback): void;
-			delConfig(id: string, options: any, callback: GenericCallback): void;
+			delConfig(id: string, callback: ErrorCallback): void;
+			delConfig(id: string, options: any, callback: ErrorCallback): void;
 
 			/**
 			 * Returns a list of objects with id between params.startkey and params.endkey
@@ -562,8 +774,8 @@ declare global {
 			 * @param options (optional) Some internal options.
 			 * @param callback Is called when the operation has finished (successfully or not)
 			 */
-			extendObject(id: string, obj: Partial<ioBroker.Object>, callback: ExtendObjectCallback): void;
-			extendObject(id: string, obj: Partial<ioBroker.Object>, options: any, callback: ExtendObjectCallback): void;
+			extendObject(id: string, obj: PartialObject, callback: ExtendObjectCallback): void;
+			extendObject(id: string, obj: PartialObject, options: any, callback: ExtendObjectCallback): void;
 
 			/**
 			 * Finds an object by ID or name. If multiple objects were found, return the first one
@@ -591,6 +803,9 @@ declare global {
 			warn(message: string): void;
 			/** log message with error severity */
 			error(message: string): void;
+
+			/** Verbosity of the log output */
+			level: "info" | "debug" | "warn" | "error";
 		}
 
 		interface Certificates {
@@ -628,6 +843,8 @@ declare global {
 			/** Callback information. This is set when the source expects a response */
 			callback: MessageCallbackInfo;
 		}
+
+		type Log = any; // TODO: define this https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/states/statesInMemServer.js#L873
 
 		type EnumList = string | string[];
 
@@ -689,7 +906,7 @@ declare global {
 			/** Will be called when the adapter is intialized */
 			ready?: () => void;
 			/** Will be called on adapter termination */
-			unload?: (callback: () => void) => void;
+			unload?: (callback: EmptyCallback) => void;
 
 			/** if true, stateChange will be called with an id that has no namespace, e.g. "state" instead of "adapter.0.state". Default: false */
 			noNamespace?: boolean;
@@ -790,12 +1007,12 @@ declare global {
 			/** Get all states, channels and devices of this adapter */
 			getAdapterObjects(callback: (objects: DictionaryLike<ioBroker.Object>) => void): void;
 			/** Extend an object and create it if it might not exist */
-			extendObject(id: string, objPart: Partial<ioBroker.Object>, options?: any, callback?: SetObjectCallback): void;
+			extendObject(id: string, objPart: PartialObject, options?: any, callback?: SetObjectCallback): void;
 			/**
 			 * Deletes an object from the object db
 			 * @param id - The id of the object without namespace
 			 */
-			delObject(id: string, options?: any, callback?: GenericCallback): void;
+			delObject(id: string, options?: any, callback?: ErrorCallback): void;
 
 			// ==============================
 			// foreign objects
@@ -816,7 +1033,7 @@ declare global {
 			/** Creates an object (which might not belong to this adapter) in the object db. Existing objects are not overwritten. */
 			setForeignObjectNotExists(id: string, obj: ioBroker.Object, options?: any, callback?: SetObjectCallback): void;
 			/** Extend an object (which might not belong to this adapter) and create it if it might not exist */
-			extendForeignObject(id: string, objPart: Partial<ioBroker.Object>, options?: any, callback?: SetObjectCallback): void;
+			extendForeignObject(id: string, objPart: PartialObject, options?: any, callback?: SetObjectCallback): void;
 			// tslint:enable:unified-signatures
 			/**
 			 * Finds an object by its ID or name
@@ -828,7 +1045,7 @@ declare global {
 			 * Deletes an object (which might not belong to this adapter) from the object db
 			 * @param id - The id of the object including namespace
 			 */
-			delForeignObject(id: string, options?: any, callback?: GenericCallback): void;
+			delForeignObject(id: string, options?: any, callback?: ErrorCallback): void;
 
 			// ==============================
 			// states
@@ -855,9 +1072,9 @@ declare global {
 			getForeignStates(pattern: string, options: any, callback: GetStatesCallback): void;
 
 			/** Deletes a state from the states DB, but not the associated object. Consider using @link{deleteState} instead */
-			delState(id: string, options?: any, callback?: GenericCallback): void;
+			delState(id: string, options?: any, callback?: ErrorCallback): void;
 			/** Deletes a state from the states DB, but not the associated object */
-			delForeignState(id: string, options?: any, callback?: GenericCallback): void;
+			delForeignState(id: string, options?: any, callback?: ErrorCallback): void;
 
 			getHistory(id: string, options: GetHistoryOptions, callback: GetHistoryCallback): void;
 
@@ -896,11 +1113,11 @@ declare global {
 			getEnums(enumList: EnumList, callback: GetEnumsCallback): void;
 			getEnums(enumList: EnumList, options: any, callback: GetEnumsCallback): void;
 
-			addChannelToEnum(enumName: string, addTo: string, parentDevice: string, channelName: string, options?: any, callback?: GenericCallback): void;
-			deleteChannelFromEnum(enumName: string, parentDevice: string, channelName: string, options?: any, callback?: GenericCallback): void;
+			addChannelToEnum(enumName: string, addTo: string, parentDevice: string, channelName: string, options?: any, callback?: ErrorCallback): void;
+			deleteChannelFromEnum(enumName: string, parentDevice: string, channelName: string, options?: any, callback?: ErrorCallback): void;
 
-			addStateToEnum(enumName: string, addTo: string, parentDevice: string, parentChannel: string, stateName: string, options?: any, callback?: GenericCallback): void;
-			deleteStateFromEnum(enumName: string, parentDevice: string, parentChannel: string, stateName: string, options?: any, callback?: GenericCallback): void;
+			addStateToEnum(enumName: string, addTo: string, parentDevice: string, parentChannel: string, stateName: string, options?: any, callback?: ErrorCallback): void;
+			deleteStateFromEnum(enumName: string, parentDevice: string, parentChannel: string, stateName: string, options?: any, callback?: ErrorCallback): void;
 
 			// ==============================
 			// subscriptions
@@ -915,19 +1132,19 @@ declare global {
 			unsubscribeForeignObjects(pattern: string, options?: any): void;
 
 			/** Subscribe to changes of states in this instance */
-			subscribeStates(pattern: string, options?: any, callback?: GenericCallback): void;
+			subscribeStates(pattern: string, options?: any, callback?: ErrorCallback): void;
 			/** Subscribe to changes of states (which might not belong to this adapter) */
-			subscribeForeignStates(pattern: string, options?: any, callback?: GenericCallback): void;
+			subscribeForeignStates(pattern: string, options?: any, callback?: ErrorCallback): void;
 			/**
 			 * Subscribe from changes of states in this instance
 			 * @param pattern - Must match the pattern used to subscribe
 			 */
-			unsubscribeStates(pattern: string, options?: any, callback?: GenericCallback): void;
+			unsubscribeStates(pattern: string, options?: any, callback?: ErrorCallback): void;
 			/**
 			 * Subscribe from changes of states (which might not belong to this adapter)
 			 * @param pattern - Must match the pattern used to subscribe
 			 */
-			unsubscribeForeignStates(pattern: string, options?: any, callback?: GenericCallback): void;
+			unsubscribeForeignStates(pattern: string, options?: any, callback?: ErrorCallback): void;
 
 			// ==============================
 			// devices and channels
@@ -935,21 +1152,21 @@ declare global {
 			/** creates an object with type device */
 			createDevice(deviceName: string, common?: any, native?: any, options?: any, callback?: SetObjectCallback): void;
 			/** deletes a device, its channels and states */
-			deleteDevice(deviceName: string, options?: any, callback?: GenericCallback): void;
+			deleteDevice(deviceName: string, options?: any, callback?: ErrorCallback): void;
 			/** gets the devices of this instance */
 
 			/** creates an object with type channel */
 			createChannel(parentDevice: string, channelName: string, roleOrCommon?: string | object, native?: any, options?: any, callback?: SetObjectCallback): void;
 			/** deletes a channel and its states */
-			deleteChannel(channelName: string, options?: any, callback?: GenericCallback): void;
-			deleteChannel(parentDevice: string, channelName: string, options?: any, callback?: GenericCallback): void;
+			deleteChannel(channelName: string, options?: any, callback?: ErrorCallback): void;
+			deleteChannel(parentDevice: string, channelName: string, options?: any, callback?: ErrorCallback): void;
 
 			/** creates a state and the corresponding object */
 			createState(parentDevice: string, parentChannel: string, stateName: string, roleOrCommon?: string | object, native?: any, options?: any, callback?: SetObjectCallback): void;
 			/** deletes a state */
-			deleteState(stateName: string, options?: any, callback?: GenericCallback): void;
-			deleteState(parentChannel: string, stateName: string, options?: any, callback?: GenericCallback): void;
-			deleteState(parentDevice: string, parentChannel: string, stateName: string, options?: any, callback?: GenericCallback): void;
+			deleteState(stateName: string, options?: any, callback?: ErrorCallback): void;
+			deleteState(parentChannel: string, stateName: string, options?: any, callback?: ErrorCallback): void;
+			deleteState(parentDevice: string, parentChannel: string, stateName: string, options?: any, callback?: ErrorCallback): void;
 
 			/**
 			 * Returns a list of all devices in this adapter instance
@@ -1000,21 +1217,21 @@ declare global {
 			 */
 			readDir(adapterName: string, path: string, callback: ReadDirCallback): void;
 			readDir(adapterName: string, path: string, options: any, callback: ReadDirCallback): void;
-			mkDir(adapterName: string, path: string, callback: GenericCallback): void;
-			mkDir(adapterName: string, path: string, options: any, callback: GenericCallback): void;
+			mkDir(adapterName: string, path: string, callback: ErrorCallback): void;
+			mkDir(adapterName: string, path: string, options: any, callback: ErrorCallback): void;
 
 			readFile(adapterName: string, path: string, callback: ReadFileCallback): void;
 			readFile(adapterName: string, path: string, options: any, callback: ReadFileCallback): void;
-			writeFile(adapterName: string, path: string, data: Buffer | string, callback: GenericCallback): void;
-			writeFile(adapterName: string, path: string, data: Buffer | string, options: any, callback: GenericCallback): void; // options see https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/objects/objectsInMemServer.js#L599
+			writeFile(adapterName: string, path: string, data: Buffer | string, callback: ErrorCallback): void;
+			writeFile(adapterName: string, path: string, data: Buffer | string, options: any, callback: ErrorCallback): void; // options see https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/objects/objectsInMemServer.js#L599
 
-			delFile(adapterName: string, path: string, callback: GenericCallback): void;
-			delFile(adapterName: string, path: string, options: any, callback: GenericCallback): void;
-			unlink(adapterName: string, path: string, callback: GenericCallback): void;
-			unlink(adapterName: string, path: string, options: any, callback: GenericCallback): void;
+			delFile(adapterName: string, path: string, callback: ErrorCallback): void;
+			delFile(adapterName: string, path: string, options: any, callback: ErrorCallback): void;
+			unlink(adapterName: string, path: string, callback: ErrorCallback): void;
+			unlink(adapterName: string, path: string, options: any, callback: ErrorCallback): void;
 
-			rename(adapterName: string, oldName: string, newName: string, callback: GenericCallback): void;
-			rename(adapterName: string, oldName: string, newName: string, options: any, callback: GenericCallback): void;
+			rename(adapterName: string, oldName: string, newName: string, callback: ErrorCallback): void;
+			rename(adapterName: string, oldName: string, newName: string, options: any, callback: ErrorCallback): void;
 
 			/**
 			 * Changes access rights of all files in the adapter directory
@@ -1038,9 +1255,13 @@ declare global {
 		type StateChangeHandler = (id: string, obj: State) => void;
 		type MessageHandler = (obj: Message) => void;
 
+		type EmptyCallback = () => void;
+		type ErrorCallback = (err?: string) => void;
+		// TODO: Redefine callbacks as subclass of GenericCallback
+		type GenericCallback<T> = (err: string | null, result?: T) => void;
+
 		type SetObjectCallback = (err: string | null, obj: { id: string }) => void;
 		type GetObjectCallback = (err: string | null, obj: ioBroker.Object) => void;
-		type GenericCallback = (err?: string) => void;
 		type GetEnumCallback = (err: string | null, enums: DictionaryLike<Enum>, requestedEnum: string) => void;
 		type GetEnumsCallback = (
 			err: string | null,
@@ -1070,6 +1291,8 @@ declare global {
 
 		type GetStateCallback = (err: string | null, state: State) => void;
 		type GetStatesCallback = (err: string | null, states: DictionaryLike<State>) => void;
+		/** Version of the callback used by States.getStates */
+		type GetStatesCallback2 = (err: string | null, states: State[]) => void;
 		type GetBinaryStateCallback = (err: string | null, state?: Buffer) => void;
 		type SetStateCallback = (err: string | null, id?: string) => void;
 		type SetStateChangedCallback = (err: string | null, id: string, notChanged: boolean) => void;
@@ -1149,6 +1372,8 @@ declare global {
 		type GetObjectListCallback = (err: string | null, result?: { rows: GetObjectListItem[] }) => void;
 
 		type ExtendObjectCallback = (err: string | null, result?: {id: string, value: ioBroker.Object}, id?: string ) => void;
+
+		type GetSessionCallback = (session: Session) => void;
 
 	} // end namespace ioBroker
 } // end declare global
