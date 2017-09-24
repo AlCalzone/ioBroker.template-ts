@@ -1,6 +1,6 @@
-﻿import fs = require('fs');
+import fs = require("fs");
 
-declare global { 
+declare global {
 	namespace ioBroker {
 
 		interface DictionaryLike<T> {
@@ -16,7 +16,7 @@ declare global {
 			device_not_connected = 0x42,
 			sensor_not_connected = 0x82,
 			device_reports_error = 0x44,
-			sensor_reports_error = 0x84
+			sensor_reports_error = 0x84,
 		}
 
 		interface State {
@@ -44,15 +44,26 @@ declare global {
 			/** Optional comment */
 			c?: string;
 		}
-		//interface States { }
+
 		type States = any; // TODO implement
 
 		type ObjectType = "state" | "channel" | "device";
 		type CommonType = "number" | "string" | "boolean" | "array" | "object" | "mixed" | "file";
 
+		// Maybe this should extend DictionaryLike<any>,
+		// but the extra properties aren't defined anywhere,
+		// so I'd rather force the user to explicitly state
+		// he knows what he's doing by casting to any
 		interface ObjectCommon {
 			/** name of this object */
 			name: string;
+
+			// Icon and role aren't defined in SCHEMA.md,
+			// but they are being used by some adapters
+			/** Icon for this object */
+			icon?: string;
+			/** role of the object */
+			role?: string;
 		}
 
 		interface StateCommon extends ObjectCommon {
@@ -76,47 +87,500 @@ declare global {
 			/** role of the state (used in user interfaces to indicate which widget to choose) */
 			role: string;
 
-			/** all possible states */
-			states?: any[];
+			/**
+			 * Dictionary of possible values for this state in the form
+			 * <pre>
+			 * {
+			 *     "internal value 1": "displayed value 1",
+			 *     "internal value 2": "displayed value 2",
+			 *     ...
+			 * }
+			 * </pre>
+			 * In old ioBroker versions, this could also be a string of the form
+			 * "val1:text1;val2:text2" (now deprecated)
+			 */
+			states?: DictionaryLike<string> | string;
 
 			/** ID of a helper state indicating if the handler of this state is working */
 			workingID?: string;
 
 			/** attached history information */
-			history?: any
+			history?: any;
 		}
 		interface ChannelCommon extends ObjectCommon {
-			/** role of the channel */
-			role?: string;
 			/** description of this channel */
 			desc?: string;
 		}
 
-		type Object = {
+		interface BaseObject {
 			/** The ID of this object */
 			_id?: string;
 			native: DictionaryLike<any>;
 			enums?: DictionaryLike<string>;
+			type: string; // specified in the derived interfaces
+			common: ObjectCommon;
+			acl?: ObjectACL;
+		}
+		interface StateObject extends BaseObject {
 			type: "state";
 			common: StateCommon;
-		} | {
-			/** The ID of this object */
-			_id?: string;
-			native: DictionaryLike<any>;
-			enums?: DictionaryLike<string>;
+			acl?: StateACL;
+		}
+		interface ChannelObject extends BaseObject {
 			type: "channel";
 			common: ChannelCommon;
-		} | {
-			/** The ID of this object */
-			_id?: string;
-			native: DictionaryLike<any>;
-			enums?: DictionaryLike<string>;
+		}
+		interface DeviceObject extends BaseObject {
 			type: "device";
-			common: ObjectCommon; //TODO: any definition for device?
-		};
-		//interface Objects { }
-		type Objects = any; // TODO implement
+			common: ObjectCommon; // TODO: any definition for device?
+		}
+		type Object = StateObject | ChannelObject | DeviceObject;
 
+		/** Defines access rights for a single file */
+		interface FileACL {
+			/** Full name of the user who owns this file, e.g. "system.user.admin" */
+			owner: string;
+			/** Full name of the group who owns this file, e.g. "system.group.administrator" */
+			ownerGroup: string;
+			/** Linux-type permissions defining access to this file */
+			permissions: number;
+		}
+		/** Defines access rights for a single file, applied to a user or group */
+		interface EvaluatedFileACL extends FileACL {
+			/** Whether the user may read the file */
+			read: boolean;
+			/** Whether the user may write the file */
+			write: boolean;
+		}
+
+		/** Defines access rights for a single object */
+		interface ObjectACL {
+			/** Full name of the user who owns this object, e.g. "system.user.admin" */
+			owner: string;
+			/** Full name of the group who owns this object, e.g. "system.group.administrator" */
+			ownerGroup: string;
+			/** Linux-type permissions defining access to this object */
+			object: number;
+		}
+		/** Defines access rights for a single state object */
+		interface StateACL extends ObjectACL {
+			/** Linux-type permissions defining access to this state */
+			state: number;
+		}
+
+		/** Defines access rights for a single object type */
+		interface ObjectOperationPermissions {
+			/** Whether a user may enumerate objects of this type */
+			list: boolean;
+			/** Whether a user may read objects of this type */
+			read: boolean;
+			/** Whether a user may write objects of this type */
+			write: boolean;
+			/** Whether a user may create objects of this type */
+			create: boolean;
+			/** Whether a user may delete objects of this type */
+			"delete": boolean;
+		}
+
+		/** Defines the rights a user or group has to change objects */
+		interface ObjectPermissions {
+			/** The access rights for files */
+			file: ObjectOperationPermissions;
+			/** The access rights for objects */
+			object: ObjectOperationPermissions;
+			/** The access rights for users/groups */
+			users: ObjectOperationPermissions;
+			/** The access rights for states */
+			state?: ObjectOperationPermissions;
+		}
+		/** Defined the complete set of access rights a user has */
+		interface PermissionSet extends ObjectPermissions {
+			/** The name of the user this ACL is for */
+			user: string;
+			/** The name of the groups this ACL was merged from */
+			groups: string[];
+			/** The access rights for certain commands */
+			other: {
+				execute: boolean,
+				http: boolean,
+				sendto: boolean,
+			};
+		}
+
+		interface Permission {
+			/** The type of the permission */
+			type: string;
+			/** Which kind of operation is required */
+			operation: string;
+		}
+		interface ObjectOrStatePermission extends Permission {
+			type: "object" | "file" | "users" | "state";
+			operation: "list" | "read" | "write" | "create" | "delete";
+		}
+		interface OtherPermission extends Permission {
+			type: "other";
+			operation: "execute" | "http" | "sendto";
+		}
+		interface CommandsPermissions {
+			// TODO: Are all properties required or is a partial object ok?
+			getObject: ObjectOrStatePermission;
+			getObjects: ObjectOrStatePermission;
+			getObjectView: ObjectOrStatePermission;
+			setObject: ObjectOrStatePermission;
+			subscribeObjects: ObjectOrStatePermission;
+			unsubscribeObjects: ObjectOrStatePermission;
+			getStates: ObjectOrStatePermission;
+			getState: ObjectOrStatePermission;
+			setState: ObjectOrStatePermission;
+			getStateHistory: ObjectOrStatePermission;
+			subscribe: ObjectOrStatePermission;
+			unsubscribe: ObjectOrStatePermission;
+			getVersion: Permission;
+			httpGet: OtherPermission;
+			sendTo: OtherPermission;
+			sendToHost: OtherPermission;
+			readFile: ObjectOrStatePermission;
+			readFile64: ObjectOrStatePermission;
+			writeFile: ObjectOrStatePermission;
+			writeFile64: ObjectOrStatePermission;
+			unlink: ObjectOrStatePermission;
+			rename: ObjectOrStatePermission;
+			mkdir: ObjectOrStatePermission;
+			readDir: ObjectOrStatePermission;
+			chmodFile: ObjectOrStatePermission;
+			authEnabled: Permission;
+			disconnect: Permission;
+			listPermissions: Permission;
+			getUserPermissions: ObjectOrStatePermission;
+		}
+
+		type UserGroup = any; // TODO find out how this looks like
+		// interface UserGroup { }
+
+		/** Contains information about a user */
+		interface User {
+			/** Which groups this user belongs to */
+			groups: UserGroup[];
+			/** Access rights of this user */
+			acl: ObjectPermissions;
+		}
+
+		/** Parameters for @link{Objects.getObjectView} */
+		interface GetObjectViewParams {
+			/** First id to include in the return list */
+			startkey: string;
+			/** Last id to include in the return list */
+			endkey: string;
+		}
+
+		/** Parameters for @link{Objects.getObjectList} */
+		interface GetObjectListParams extends GetObjectViewParams {
+			/** Whether docs should be included in the return list */ // TODO: What are docs?
+			include_docs: boolean;
+		}
+
+		/** Provides low-level access to ioBroker objects */
+		interface Objects {
+			/**
+			 * For a given user, returns the groups he belongs to, and his access rights
+			 * @param user Name of the user. Has to start with "system.user."
+			 * @param callback The callback function to be invoked with the return values
+			 */
+			getUserGroup(user: string, callback: GetUserGroupCallback): void;
+
+			/**
+			 * Determines the mime type for a given file extension
+			 * @param ext File extension, including the leading dot, e.g. ".zip"
+			 */
+			getMimeType(ext: string): {mimeType: string, isBinary: boolean};
+
+			/**
+			 * Writes a file.
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name File name
+			 * @param data Contents of the file
+			 * @param options (optional) MIME type of the file (string). Or some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			writeFile(id: string, name: string, data: Buffer | string, callback: GenericCallback): void;
+			writeFile(id: string, name: string, data: Buffer | string, options: string | any, callback: GenericCallback): void;
+
+			/**
+			 * Reads a file.
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name File name
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			readFile(id: string, name: string, callback: ReadFileCallback): void;
+			readFile(id: string, name: string, options: any, callback: ReadFileCallback): void;
+
+			/**
+			 * Deletes a file.
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name File name
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			unlink(id: string, name: string, callback: GenericCallback): void;
+			unlink(id: string, name: string, options: any, callback: GenericCallback): void;
+			/**
+			 * Deletes a file.
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name File name
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			delFile(id: string, name: string, callback: GenericCallback): void;
+			delFile(id: string, name: string, options: any, callback: GenericCallback): void;
+
+			/**
+			 * Finds all files and directories starting with <name>
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name File or directory name
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			readDir(id: string, name: string, callback: ReadDirCallback): void;
+			readDir(id: string, name: string, options: any, callback: ReadDirCallback): void;
+
+			/**
+			 * Renames a file or directory
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param oldName Old file or directory name
+			 * @param newName Name to rename to
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			rename(id: string, oldName: string, newName: string, callback: GenericCallback): void;
+			rename(id: string, oldName: string, newName: string, options: any, callback: GenericCallback): void;
+
+			/**
+			 * Creates an empty file with the given name
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name File name
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			touch(id: string, name: string, callback: GenericCallback): void;
+			touch(id: string, name: string, options: any, callback: GenericCallback): void;
+
+			/**
+			 * Deletes all files in the root directory matching <name>
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name Pattern to match against
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			rm(id: string, name: string, callback: RmCallback): void;
+			rm(id: string, name: string, options: any, callback: RmCallback): void;
+
+			/**
+			 * Creates an empty directory with the given name
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name Directory name
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			mkDir(id: string, name: string, callback: GenericCallback): void;
+			mkDir(id: string, name: string, options: any, callback: GenericCallback): void;
+
+			/**
+			 * Takes possession all files in the root directory matching <name>
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name Pattern to match against
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			chownFile(id: string, name: string, callback: ChownFileCallback): void;
+			chownFile(id: string, name: string, options: any, callback: ChownFileCallback): void;
+
+			/**
+			 * Changes access rights of all files in the root directory matching <name>
+			 * @param id Name of the root directory. This should be the adapter instance, e.g. "admin.0"
+			 * @param name Pattern to match against
+			 * @param options Mode of the access change as a number or hexadecimal string
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			chmodFile(id: string, name: string, options: {mode: number | string} | DictionaryLike<any>, callback: ChownFileCallback): void;
+
+			// not documented. enabled = true seems to disable the cache
+			// enableFileCache(enabled, options, callback)
+
+			/**
+			 * Subscribe to object changes
+			 * @param pattern The pattern to match against
+			 */
+			subscribeConfig(pattern: string, callback: () => void): void;
+			subscribeConfig(pattern: string, options: any, callback: () => void): void;
+			/**
+			 * Subscribe to object changes
+			 * @param pattern The pattern to match against
+			 */
+			subscribe(pattern: string, callback: () => void): void;
+			subscribe(pattern: string, options: any, callback: () => void): void;
+
+			/**
+			 * Unsubscribe from object changes
+			 * @param pattern The pattern to match against
+			 */
+			unsubscribeConfig(pattern: string, callback: () => void): void;
+			unsubscribeConfig(pattern: string, options: any, callback: () => void): void;
+			/**
+			 * Unsubscribe from object changes
+			 * @param pattern The pattern to match against
+			 */
+			unsubscribe(pattern: string, callback: () => void): void;
+			unsubscribe(pattern: string, options: any, callback: () => void): void;
+
+			/**
+			 * Takes possession of all objects matching <pattern>
+			 * @param pattern Pattern to match against
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			chownObject(pattern: string, callback: ChownObjectCallback): void;
+			chownObject(pattern: string, options: any, callback: ChownObjectCallback): void;
+
+			/**
+			 * Changes access rights of all objects matching <pattern>
+			 * @param pattern Pattern to match against
+			 * @param options Mode of the access change as a number or hexadecimal string
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			chmodObject(pattern: string, callback: ChownObjectCallback): void;
+			chmodObject(pattern: string, options: any, callback: ChownObjectCallback): void;
+
+			/**
+			 * Retrieves a copy of the object with the given ID
+			 * @param id Id of the object to find
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getObject(id: string, callback: GetObjectCallback): void;
+			getObject(id: string, options: any, callback: GetObjectCallback): void;
+			/**
+			 * Retrieves a copy of the object with the given ID
+			 * @param id Id of the object to find
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getConfig(id: string, callback: GetObjectCallback): void;
+			getConfig(id: string, options: any, callback: GetObjectCallback): void;
+
+			/**
+			 * Returns a list of config keys matching <pattern>
+			 * @param pattern Pattern to match against
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 * @param dontModify unused
+			 */
+			getConfigKeys(pattern: string, callback: GetConfigKeysCallback, dontModify: any): void;
+			getConfigKeys(pattern: string, options: any, callback: GetConfigKeysCallback, dontModify: any): void;
+
+			/**
+			 * Returns a list of objects with the given ids
+			 * @param keys IDs of the objects to be retrieved
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 * @param dontModify unused
+			 */
+			getObjects(keys: string[], callback: GetObjectsCallback2, dontModify: any): void;
+			getObjects(keys: string[], options: any, callback: GetObjectsCallback2, dontModify: any): void;
+			/**
+			 * Returns a list of objects with the given ids
+			 * @param keys IDs of the objects to be retrieved
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 * @param dontModify unused
+			 */
+			getConfigs(keys: string[], callback: GetObjectsCallback2, dontModify: any): void;
+			getConfigs(keys: string[], options: any, callback: GetObjectsCallback2, dontModify: any): void;
+
+			/**
+			 * Creates or overwrites an object in the object db
+			 * @param id ID of the object
+			 * @param obj Object to store
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			setObject(id: string, obj: ioBroker.Object, callback: SetObjectCallback): void;
+			setObject(id: string, obj: ioBroker.Object, options: any, callback: SetObjectCallback): void;
+			/**
+			 * Creates or overwrites an object in the object db
+			 * @param id ID of the object
+			 * @param obj Object to store
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			setConfig(id: string, obj: ioBroker.Object, callback: SetObjectCallback): void;
+			setConfig(id: string, obj: ioBroker.Object, options: any, callback: SetObjectCallback): void;
+
+			/**
+			 * Deletes an object in the object db
+			 * @param id ID of the object
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			delObject(id: string, callback: GenericCallback): void;
+			delObject(id: string, options: any, callback: GenericCallback): void;
+			/**
+			 * Deletes an object in the object db
+			 * @param id ID of the object
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			delConfig(id: string, callback: GenericCallback): void;
+			delConfig(id: string, options: any, callback: GenericCallback): void;
+
+			/**
+			 * Returns a list of objects with id between params.startkey and params.endkey
+			 * @param params Parameters determining the objects included in the return list. Null to include all objects
+			 * @param options (optional) If the returned list should be sorted. And some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getObjectList(params: GetObjectListParams | null, callback: GetObjectListCallback): void;
+			getObjectList(params: GetObjectListParams | null, options: { sorted?: boolean } | DictionaryLike<any>, callback: GetObjectListCallback): void;
+
+			/**
+			 * Query a predefined object view (similar to SQL stored procedures) and return the results
+			 * For a detailed description refer to https://github.com/ioBroker/ioBroker/wiki/Adapter-Development-Documentation#object-fields
+			 * or http://guide.couchdb.org/editions/1/en/views.html
+			 * @param design The namespace of the object view, as defined in io-package.json. Usually the adapter name, e.g. "hm-rpc"
+			 * @param search The name of the object view.
+			 * @param params Parameters to additionally filter out objects from the return list. Null to include all objects
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getObjectView(design: string, search: string, params: GetObjectViewParams | null, callback: GetObjectViewCallback): void;
+			getObjectView(design: string, search: string, params: GetObjectViewParams | null, options: any, callback: GetObjectViewCallback): void;
+
+			/**
+			 * Extends an object in the object db with new properties
+			 * @param id ID of the object
+			 * @param obj Object to extend the original one with. May be just parts of an object.
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			extendObject(id: string, obj: Partial<ioBroker.Object>, callback: ExtendObjectCallback): void;
+			extendObject(id: string, obj: Partial<ioBroker.Object>, options: any, callback: ExtendObjectCallback): void;
+
+			/**
+			 * Finds an object by ID or name. If multiple objects were found, return the first one
+			 * @param idOrName ID or name of the object
+			 * @param type If != null, only return an object with a common.type equal to this
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			findObject(idOrName: string, type: CommonType | null, callback: FindObjectCallback): void;
+			findObject(idOrName: string, type: CommonType | null, options: any, callback: FindObjectCallback): void;
+
+			// I'd rather not document a function with the name "destroyDB"
+
+			/** Destructor of the class. Call this before shutting down. */
+			destroy(): void;
+
+		} // end interface Objects
 
 		interface Logger {
 			/** log message with debug level */
@@ -165,11 +629,9 @@ declare global {
 			callback: MessageCallbackInfo;
 		}
 
-
-
 		type EnumList = string | string[];
 
-		interface Enum { } 
+		type Enum = any; // TODO: implement this
 
 		interface DirectoryEntry {
 			file: string;
@@ -179,7 +641,6 @@ declare global {
 			modifiedAt: number;
 			createdAt: number;
 		}
-
 
 		interface GetHistoryOptions {
 			instance?: string;
@@ -228,11 +689,11 @@ declare global {
 			/** Will be called when the adapter is intialized */
 			ready?: () => void;
 			/** Will be called on adapter termination */
-			unload?: (callback: Function) => void;
+			unload?: (callback: () => void) => void;
 
 			/** if true, stateChange will be called with an id that has no namespace, e.g. "state" instead of "adapter.0.state". Default: false */
 			noNamespace?: boolean;
-		}
+		} // end interface AdapterOptions
 
 		interface Adapter {
 			/** The name of the adapter */
@@ -275,6 +736,9 @@ declare global {
 			 */
 			getPort(port: number, callback: (port: number) => void): void;
 
+			/** Stops the adapter. Note: Is not always defined. */
+			stop?: () => void;
+
 			// ==============================
 			// GENERAL
 
@@ -287,10 +751,10 @@ declare global {
 			checkGroup(user: string, group: string, callback: (result: boolean) => void): void;
 			checkGroup(user: string, group: string, options: any, callback: (result: boolean) => void): void;
 			/** <INTERNAL> Determines the users permissions */
-			calculatePermissions(user: string, commandsPermissions: any, callback: (result: any) => void): void;
-			calculatePermissions(user: string, commandsPermissions: any, options: any, callback: (result: any) => void): void;
+			calculatePermissions(user: string, commandsPermissions: CommandsPermissions, callback: (result: PermissionSet) => void): void;
+			calculatePermissions(user: string, commandsPermissions: CommandsPermissions, options: any, callback: (result: PermissionSet) => void): void;
 			/** Returns SSL certificates by name (private key, public cert and chained certificate) for creation of HTTPS servers */
-			getCertificates(publicName: string, privateName: string, chainedName: string, callback: (err: string, certs?: Certificates, useLetsEncryptCert?: boolean) => void): void;
+			getCertificates(publicName: string, privateName: string, chainedName: string, callback: (err: string | null, certs?: Certificates, useLetsEncryptCert?: boolean) => void): void;
 
 			/**
 			 * Sends a message to a specific instance or all instances of some specific adapter.
@@ -311,7 +775,7 @@ declare global {
 				device: string;
 				channel: string;
 				state: string;
-			}
+			};
 
 			// ==============================
 			// own objects
@@ -320,14 +784,14 @@ declare global {
 			getObject(id: string, callback: GetObjectCallback): void;
 			getObject(id: string, options: any, callback: GetObjectCallback): void;
 			/** Creates or overwrites an object in the object db */
-			setObject(id: string, obj: Object, options?: any, callback?: SetObjectCallback): void;
+			setObject(id: string, obj: ioBroker.Object, options?: any, callback?: SetObjectCallback): void;
 			/** Creates an object in the object db. Existing objects are not overwritten. */
-			setObjectNotExists(id: string, obj: Object, options?: any, callback?: SetObjectCallback): void;
+			setObjectNotExists(id: string, obj: ioBroker.Object, options?: any, callback?: SetObjectCallback): void;
 			/** Get all states, channels and devices of this adapter */
-			getAdapterObjects(callback: (objects: { [id: string]: Object }) => void): void;
+			getAdapterObjects(callback: (objects: DictionaryLike<ioBroker.Object>) => void): void;
 			/** Extend an object and create it if it might not exist */
-			extendObject(id: string, objPart: Partial<Object>, options?: any, callback?: SetObjectCallback): void;
-			/** 
+			extendObject(id: string, objPart: Partial<ioBroker.Object>, options?: any, callback?: SetObjectCallback): void;
+			/**
 			 * Deletes an object from the object db
 			 * @param id - The id of the object without namespace
 			 */
@@ -336,6 +800,7 @@ declare global {
 			// ==============================
 			// foreign objects
 
+			// tslint:disable:unified-signatures
 			/** Reads an object (which might not belong to this adapter) from the object db */
 			getForeignObject(id: string, callback: GetObjectCallback): void;
 			getForeignObject(id: string, options: any, callback: GetObjectCallback): void;
@@ -347,23 +812,23 @@ declare global {
 			getForeignObjects(pattern: string, type: ObjectType, options: any, callback: GetObjectsCallback): void;
 			getForeignObjects(pattern: string, type: ObjectType, enums: EnumList, options: any, callback: GetObjectsCallback): void;
 			/** Creates or overwrites an object (which might not belong to this adapter) in the object db */
-			setForeignObject(id: string, obj: Object, options?: any, callback?: SetObjectCallback): void;
+			setForeignObject(id: string, obj: ioBroker.Object, options?: any, callback?: SetObjectCallback): void;
 			/** Creates an object (which might not belong to this adapter) in the object db. Existing objects are not overwritten. */
-			setForeignObjectNotExists(id: string, obj: Object, options?: any, callback?: SetObjectCallback): void;
+			setForeignObjectNotExists(id: string, obj: ioBroker.Object, options?: any, callback?: SetObjectCallback): void;
 			/** Extend an object (which might not belong to this adapter) and create it if it might not exist */
-			extendForeignObject(id: string, objPart: Partial<Object>, options?: any, callback?: SetObjectCallback): void;
+			extendForeignObject(id: string, objPart: Partial<ioBroker.Object>, options?: any, callback?: SetObjectCallback): void;
+			// tslint:enable:unified-signatures
 			/**
 			 * Finds an object by its ID or name
 			 * @param type - common.type of the state
 			 */
 			findForeignObject(idOrName: string, type: string, callback: FindObjectCallback): void;
 			findForeignObject(idOrName: string, type: string, options: any, callback: FindObjectCallback): void;
-			/**  
+			/**
 			 * Deletes an object (which might not belong to this adapter) from the object db
 			 * @param id - The id of the object including namespace
 			 */
 			delForeignObject(id: string, options?: any, callback?: GenericCallback): void;
-
 
 			// ==============================
 			// states
@@ -396,6 +861,30 @@ declare global {
 
 			getHistory(id: string, options: GetHistoryOptions, callback: GetHistoryCallback): void;
 
+			// MISSING:
+			// pushFifo and similar https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/adapter.js#L4105
+			// logRedirect https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/adapter.js#L4294
+			// requireLog https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/adapter.js#L4336
+			// processLog https://github.com/ioBroker/ioBroker.js-controller/blob/master/lib/adapter.js#L4360
+
+			/**
+			 * Writes a binary state into Redis
+			 * @param id The id of the state
+			 * @param binary The data to be written
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			setBinaryState(id: string, binary: Buffer, callback: SetStateCallback): void;
+			setBinaryState(id: string, binary: Buffer, options: any, callback: SetStateCallback): void;
+			/**
+			 * Reads a binary state from Redis
+			 * @param id The id of the state
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getBinaryState(id: string, callback: GetBinaryStateCallback): void;
+			getBinaryState(id: string, options: any, callback: GetBinaryStateCallback): void;
+
 			// ==============================
 			// enums
 
@@ -408,11 +897,9 @@ declare global {
 			getEnums(enumList: EnumList, options: any, callback: GetEnumsCallback): void;
 
 			addChannelToEnum(enumName: string, addTo: string, parentDevice: string, channelName: string, options?: any, callback?: GenericCallback): void;
-
 			deleteChannelFromEnum(enumName: string, parentDevice: string, channelName: string, options?: any, callback?: GenericCallback): void;
 
 			addStateToEnum(enumName: string, addTo: string, parentDevice: string, parentChannel: string, stateName: string, options?: any, callback?: GenericCallback): void;
-
 			deleteStateFromEnum(enumName: string, parentDevice: string, parentChannel: string, stateName: string, options?: any, callback?: GenericCallback): void;
 
 			// ==============================
@@ -464,6 +951,44 @@ declare global {
 			deleteState(parentChannel: string, stateName: string, options?: any, callback?: GenericCallback): void;
 			deleteState(parentDevice: string, parentChannel: string, stateName: string, options?: any, callback?: GenericCallback): void;
 
+			/**
+			 * Returns a list of all devices in this adapter instance
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getDevices(callback: GetObjectsCallback3<DeviceObject>): void;
+			getDevices(options: any, callback: GetObjectsCallback3<DeviceObject>): void;
+
+			/**
+			 * Returns a list of all channels in this adapter instance
+			 * @param parentDevice (optional) Name of the parent device to filter the channels by
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getChannels(callback: GetObjectsCallback3<ChannelObject>): void;
+			getChannels(parentDevice: string | null, callback: GetObjectsCallback3<ChannelObject>): void;
+			getChannels(parentDevice: string | null, options: any, callback: GetObjectsCallback3<ChannelObject>): void;
+			/**
+			 * Returns a list of all channels in this adapter instance
+			 * @param parentDevice (optional) Name of the parent device to filter the channels by
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getChannelsOf(callback: GetObjectsCallback3<ChannelObject>): void;
+			getChannelsOf(parentDevice: string | null, callback: GetObjectsCallback3<ChannelObject>): void;
+			getChannelsOf(parentDevice: string | null, options: any, callback: GetObjectsCallback3<ChannelObject>): void;
+
+			/**
+			 * Returns a list of all states in this adapter instance
+			 * @param parentDevice (optional) Name of the parent device to filter the channels by
+			 * @param parentChannel (optional) Name of the parent channel to filter the channels by
+			 * @param options (optional) Some internal options.
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			getStatesOf(callback: GetObjectsCallback3<StateObject>): void;
+			getStatesOf(parentDevice: string | null, callback: GetObjectsCallback3<StateObject>): void;
+			getStatesOf(parentDevice: string | null, parentChannel: string | null, callback: GetObjectsCallback3<StateObject>): void;
+			getStatesOf(parentDevice: string | null, parentChannel: string | null, options: any, callback: GetObjectsCallback3<StateObject>): void;
 
 			// ==============================
 			// filesystem
@@ -491,6 +1016,14 @@ declare global {
 			rename(adapterName: string, oldName: string, newName: string, callback: GenericCallback): void;
 			rename(adapterName: string, oldName: string, newName: string, options: any, callback: GenericCallback): void;
 
+			/**
+			 * Changes access rights of all files in the adapter directory
+			 * @param adapter Name of the adapter instance, e.g. "admin.0". Defaults to the namespace of this adapter.
+			 * @param path Pattern to match the file path against
+			 * @param options Mode of the access change as a number or hexadecimal string
+			 * @param callback Is called when the operation has finished (successfully or not)
+			 */
+			chmodFile(adapter: string | null, path: string, options: {mode: number | string} | DictionaryLike<any>, callback: ChownFileCallback): void;
 
 			// ==============================
 			// formatting
@@ -499,34 +1032,123 @@ declare global {
 			formatValue(value: number | string, decimals: number, format: any): string;
 			formatDate(dateObj: string | Date | number, format: string): string;
 			formatDate(dateObj: string | Date | number, isDuration: boolean | string, format: string): string;
-		}
+		} // end interface Adapter
 
-		type ObjectChangeHandler = (id: string, obj: Object) => void;
+		type ObjectChangeHandler = (id: string, obj: ioBroker.Object) => void;
 		type StateChangeHandler = (id: string, obj: State) => void;
 		type MessageHandler = (obj: Message) => void;
 
-		type SetObjectCallback = (err: string, obj: { id: string }) => void;
-		type GetObjectCallback = (err: string, obj: Object) => void;
+		type SetObjectCallback = (err: string | null, obj: { id: string }) => void;
+		type GetObjectCallback = (err: string | null, obj: ioBroker.Object) => void;
 		type GenericCallback = (err?: string) => void;
-		type GetEnumCallback = (err: string, enums: DictionaryLike<Enum>, requestedEnum: string) => void;
+		type GetEnumCallback = (err: string | null, enums: DictionaryLike<Enum>, requestedEnum: string) => void;
 		type GetEnumsCallback = (
-			err: string,
+			err: string | null,
 			result: {
-				[groupName: string]: DictionaryLike<Enum>
-			}
+				[groupName: string]: DictionaryLike<Enum>,
+			},
 		) => void;
-		type GetObjectsCallback = (err: string, objects: DictionaryLike<Object>) => void;
-		type FindObjectCallback = (err: string, id?: string, name?: string) => void;
+		type GetObjectsCallback = (err: string | null, objects: DictionaryLike<ioBroker.Object>) => void;
 
-		type GetStateCallback = (err: string, state: State) => void;
-		type GetStatesCallback = (err: string, states: DictionaryLike<State>) => void;
-		type SetStateCallback = (err: string, id: string) => void;
-		type SetStateChangedCallback = (err: string, id: string, notChanged: boolean) => void;
-		type DeleteStateCallback = (err: string, id?: string) => void;
-		type GetHistoryCallback = (err: string, result: (State & { id?: string })[], step: number, sessionId?: string) => void;
+		type FindObjectCallback = (
+			/** If an error happened, this contains the message */
+			err: string | null,
+			/** If an object was found, this contains the ID */
+			id?: string,
+			/** If an object was found, this contains the common.name */
+			name?: string,
+		) => void;
 
+		interface GetObjectsItem<T extends BaseObject> {
+			/** The ID of this object */
+			id: string;
+			/** A copy of the object from the DB */
+			value: T;
+		}
+		// This is a version used by GetDevices/GetChannelsOf/GetStatesOf
+		type GetObjectsCallback3<T extends BaseObject> = (err: string | null, result?: GetObjectsItem<T>[]) => void;
 
-		type ReadDirCallback = (err: string, entries: DirectoryEntry[]) => void;
-		type ReadFileCallback = (err: string, file?: Buffer | string, mimeType?: string) => void;
-	}
-}
+		type GetStateCallback = (err: string | null, state: State) => void;
+		type GetStatesCallback = (err: string | null, states: DictionaryLike<State>) => void;
+		type GetBinaryStateCallback = (err: string | null, state?: Buffer) => void;
+		type SetStateCallback = (err: string | null, id?: string) => void;
+		type SetStateChangedCallback = (err: string | null, id: string, notChanged: boolean) => void;
+		type DeleteStateCallback = (err: string | null, id?: string) => void;
+		type GetHistoryCallback = (err: string | null, result: (State & { id?: string })[], step: number, sessionId?: string) => void;
+
+		/** Contains the return values of readDir */
+		interface ReadDirResult {
+			/** Name of the file or directory */
+			file: string;
+			/** File system stats */
+			stats: fs.Stats;
+			/** Whether this is a directory or a file */
+			isDir: boolean;
+			/** Access rights */
+			acl: EvaluatedFileACL;
+			/** Date of last modification */
+			modifiedAt: number;
+			/** Date of creation */
+			createdAt: number;
+		}
+		type ReadDirCallback = (err: string | null, entries?: ReadDirResult[]) => void;
+		type ReadFileCallback = (err: string | null, file?: Buffer | string, mimeType?: string) => void;
+
+		/** Contains the return values of chownFile */
+		interface ChownFileResult {
+			/** The parent directory of the processed file or directory */
+			path: string;
+			/** Name of the file or directory */
+			file: string;
+			/** File system stats */
+			stats: fs.Stats;
+			/** Whether this is a directory or a file */
+			isDir: boolean;
+			/** Access rights */
+			acl: FileACL;
+			/** Date of last modification */
+			modifiedAt: number;
+			/** Date of creation */
+			createdAt: number;
+		}
+		type ChownFileCallback = (err: string | null, entries?: ChownFileResult[], id?: string) => void;
+
+		/** Contains the return values of rm */
+		interface RmResult {
+			/** The parent directory of the deleted file or directory */
+			path: string;
+			/** The name of the deleted file or directory */
+			file: string;
+			/** Whether the deleted object was a directory or a file */
+			isDir: boolean;
+		}
+		type RmCallback = (err: string | null, entries?: RmResult[]) => void;
+
+		type GetUserGroupCallback = (objectsInstance: Objects, user: User, groups: UserGroup[], acl: ObjectPermissions) => void;
+
+		type ChownObjectCallback = (err: string | null, list?: ioBroker.Object[]) => void;
+
+		type GetConfigKeysCallback = (err: string | null, list?: string[]) => void;
+		// this is a version of the callback used by Objects.getObjects
+		type GetObjectsCallback2 = (err: string | null, objects?: (ioBroker.Object | { err: string })[]) => void;
+
+		interface GetObjectViewItem {
+			/** The ID of this object */
+			id: string;
+			/** A copy of the object from the DB or some aggregation result */
+			value: ioBroker.Object | any;
+		}
+		type GetObjectViewCallback = (err: string | null, result?: { rows: GetObjectViewItem[] }) => void;
+
+		interface GetObjectListItem extends GetObjectViewItem {
+			/** A copy of the object */
+			value: ioBroker.Object;
+			/** The same as @link{value} */
+			doc: ioBroker.Object;
+		}
+		type GetObjectListCallback = (err: string | null, result?: { rows: GetObjectListItem[] }) => void;
+
+		type ExtendObjectCallback = (err: string | null, result?: {id: string, value: ioBroker.Object}, id?: string ) => void;
+
+	} // end namespace ioBroker
+} // end declare global

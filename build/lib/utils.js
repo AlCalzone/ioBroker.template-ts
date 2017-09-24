@@ -6,23 +6,22 @@ var fs = require("fs");
 // Get js-controller directory to load libs
 function getControllerDir(isInstall) {
     // Find the js-controller location
-    // tslint:disable-next-line:no-shadowed-variable
-    var controllerDir = __dirname.replace(/\\/g, "/");
-    controllerDir = controllerDir.split("/");
-    if (controllerDir[controllerDir.length - 4] === "adapter") {
-        controllerDir.splice(controllerDir.length - 4, 4);
-        controllerDir = controllerDir.join("/");
+    var ctrlrDir = __dirname.replace(/\\/g, "/");
+    ctrlrDir = ctrlrDir.split("/");
+    if (ctrlrDir[ctrlrDir.length - 4] === "adapter") {
+        ctrlrDir.splice(ctrlrDir.length - 4, 4);
+        ctrlrDir = ctrlrDir.join("/");
     }
-    else if (controllerDir[controllerDir.length - 4] === "node_modules") {
-        controllerDir.splice(controllerDir.length - 4, 4);
-        controllerDir = controllerDir.join("/");
-        if (fs.existsSync(controllerDir + "/node_modules/iobroker.js-controller")) {
-            controllerDir += "/node_modules/iobroker.js-controller";
+    else if (ctrlrDir[ctrlrDir.length - 4] === "node_modules") {
+        ctrlrDir.splice(ctrlrDir.length - 4, 4);
+        ctrlrDir = ctrlrDir.join("/");
+        if (fs.existsSync(ctrlrDir + "/node_modules/iobroker.js-controller")) {
+            ctrlrDir += "/node_modules/iobroker.js-controller";
         }
-        else if (fs.existsSync(controllerDir + "/node_modules/ioBroker.js-controller")) {
-            controllerDir += "/node_modules/ioBroker.js-controller";
+        else if (fs.existsSync(ctrlrDir + "/node_modules/ioBroker.js-controller")) {
+            ctrlrDir += "/node_modules/ioBroker.js-controller";
         }
-        else if (!fs.existsSync(controllerDir + "/controller.js")) {
+        else if (!fs.existsSync(ctrlrDir + "/controller.js")) {
             if (!isInstall) {
                 console.log("Cannot find js-controller");
                 process.exit(10);
@@ -41,7 +40,7 @@ function getControllerDir(isInstall) {
             process.exit();
         }
     }
-    return controllerDir;
+    return ctrlrDir;
 }
 // Read controller configuration file
 var controllerDir = getControllerDir(typeof process !== "undefined" && process.argv && process.argv.indexOf("--install") !== -1);
