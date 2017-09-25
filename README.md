@@ -6,6 +6,8 @@ This is a template for the creation of an ioBroker adapter with TypeScript. Whil
 
 It includes both code running within iobroker and as vis widget. If you only plan to create a vis widget then you should use the [iobroker.vis-template](https://github.com/ioBroker/ioBroker.vis-template) instead.
 
+If you are interested in a stripped down version without widget, docs and stuff, consider using the [bare branch](../../tree/bare).
+
 ## Steps 
 1. download and unpack this packet from github ```https://github.com/AlCalzone/ioBroker.template-ts/archive/master.zip```
   or clone git repository ```git clone https://github.com/AlCalzone/ioBroker.template-ts.git```
