@@ -10,7 +10,7 @@ If you are interested in a stripped down version without widget, docs and stuff,
 
 ## Steps 
 1. download and unpack this packet from github ```https://github.com/AlCalzone/ioBroker.template-ts/archive/master.zip```
-  or clone git repository ```git clone https://github.com/AlCalzone/ioBroker.template-ts.git```
+  or clone git repository ```git clone --depth=1 https://github.com/AlCalzone/ioBroker.template-ts.git```
 
 2. download required npm packets. Write in ioBroker.template directory:
 
