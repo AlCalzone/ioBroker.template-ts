@@ -54,7 +54,16 @@ If you are interested in a stripped down version without widget, docs and stuff,
   
 8. share it with the community
 
+## Unit testing
+As of version 0.1.0, the template adapter comes with TypeScript-style unit testing enabled. Files with the name `*.test.ts` in your `src/` directory are automatically picked up by Travis/AppVeyor testing and run before the adapter testing.  
+An example is given in `src/main.test.ts`. It is advised to provide such test files for all modules in your adapter to pick up unwanted errors.
+
+In order to test changes locally, run `npm run test_ts` for testing or `npm run coverage` for an extensive code coverage report. That report can be viewed in your browser by opening the file `coverage/index.html`.
+
 ## Changelog
+
+#### 0.1.0
+* (AlCalzone) added unit testing setup
 
 #### 0.0.1
 * (AlCalzone) initial release
