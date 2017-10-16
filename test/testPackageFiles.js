@@ -26,7 +26,7 @@ describe('Test package.json and io-package.json', function() {
         }
 
         expect(ioPackage.common.authors).to.exist;
-        if (ioPackage.common.name.indexOf('template') === 0) {
+        if (ioPackage.common.name.indexOf('template') !== 0) {
             if (Array.isArray(ioPackage.common.authors)) {
                 expect(ioPackage.common.authors.length).to.not.be.equal(0);
                 if (ioPackage.common.authors.length === 1) {
