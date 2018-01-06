@@ -8,6 +8,8 @@ It includes both code running within iobroker and as vis widget. If you only pla
 
 If you are interested in a stripped down version without widget, docs and stuff, consider using the [bare branch](../../tree/bare).
 
+## NOTE: This description is not updated for v0.2.0 yet!!!
+
 ## Steps 
 1. download and unpack this packet from github ```https://github.com/AlCalzone/ioBroker.template-ts/archive/master.zip```
   or clone git repository ```git clone --depth=1 https://github.com/AlCalzone/ioBroker.template-ts.git```
@@ -62,6 +64,9 @@ In order to test changes locally, run `npm run test_ts` for testing or `npm run 
 
 ## Changelog
 
+#### 0.2.0 (2016-01-06)
+* (AlCalzone) Added support for Admin v3
+
 #### 0.1.0
 * (AlCalzone) added unit testing setup
 
@@ -71,7 +76,7 @@ In order to test changes locally, run `npm run test_ts` for testing or `npm run 
 ## License
 The MIT License (MIT)
 
-Copyright (c) 2017 @@Author@@ <@@email@@>
+Copyright (c) 2018 @@Author@@ <@@email@@>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

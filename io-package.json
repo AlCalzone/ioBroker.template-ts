@@ -1,29 +1,63 @@
 {
     "common": {
         "name": "template-ts",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "news": {
+            "0.2.0": {
+                "en": "Added support for Admin v3",
+                "de": "Unterstützung für Admin v3 hinzugefügt",
+                "ru": "Добавлена ​​поддержка Admin v3",
+                "pt": "Adicionado suporte para Admin v3",
+                "nl": "Ondersteuning toegevoegd voor Admin v3",
+                "fr": "Ajout du support pour Admin v3",
+                "it": "Aggiunto supporto per Admin v3",
+                "es": "Se agregó soporte para Admin v3",
+                "pl": "Dodano obsługę administratora v3"
+            },
             "0.1.0": {
                 "en": "Added TypeScript unit testing",
-                "de": "TypeScript unit tests eingebaut"
+                "de": "TypeScript-Komponententest hinzugefügt",
+                "ru": "Добавлено тестирование модуля TypeScript",
+                "pt": "Teste de unidade TypeScript adicionado",
+                "nl": "TypeScript-eenheidstests toegevoegd",
+                "fr": "Tests unitaires de typeScript ajoutés",
+                "it": "Aggiunto il test dell'unità TypeScript",
+                "es": "Prueba de unidades de TypeScript agregada",
+                "pl": "Dodano testowanie jednostek TypeScript"
             },
             "0.0.1": {
-                "en": "initial adapter",
-                "de": "Initiale Version",
-                "ru": "Первоначальный адаптер",
-                "pt": "Versão inicial",
-                "fr": "Version initiale",
-                "nl": "Eerste release"
+                "en": "initial release",
+                "de": "Erstveröffentlichung",
+                "ru": "Начальная версия",
+                "pt": "lançamento inicial",
+                "nl": "Eerste uitgave",
+                "fr": "Première version",
+                "it": "Versione iniziale",
+                "es": "Versión inicial",
+                "pl": "Pierwsze wydanie"
             }
         },
-        "title": "Javascript/Node.js based template adapter for TypeScript",
+        "title": {
+            "en": "Template adapter using TypeScript/Node.js",
+            "de": "Vorlagenadapter mit TypeScript / Node.js",
+            "ru": "Адаптер шаблонов с использованием TypeScript / Node.js",
+            "pt": "Adaptador de modelo usando TypeScript / Node.js",
+            "nl": "Sjabloonadapter met TypeScript / Node.js",
+            "fr": "Adaptateur de modèle utilisant TypeScript / Node.js",
+            "it": "Adattatore del modello con TypeScript / Node.js",
+            "es": "Adaptador de plantilla con TypeScript / Node.js",
+            "pl": "Adapter szablonu za pomocą TypeScript / Node.js"
+        },
         "desc": {
-            "en": "ioBroker template Adapter",
-            "de": "ioBroker Template Adapter",
-            "ru": "ioBroker Template драйвер как образец",
-            "pt": "Modelo de adaptador para o ioBroker",
-            "fr": "ioBroker adaptateur modèle",
-            "nl": "ioBroker Template Adapter"
+            "en": "Template to create ioBroker adapters using TypeScript",
+            "de": "Vorlage zum Erstellen von ioBroker-Adaptern mit TypeScript",
+            "ru": "Шаблон для создания адаптеров ioBroker с использованием TypeScript",
+            "pt": "Modelo para criar adaptadores ioBroker usando TypeScript",
+            "nl": "Sjabloon om ioBroker-adapters te maken met TypeScript",
+            "fr": "Modèle pour créer des adaptateurs ioBroker en utilisant TypeScript",
+            "it": "Modello per creare adattatori ioBroker usando TypeScript",
+            "es": "Plantilla para crear adaptadores ioBroker utilizando TypeScript",
+            "pl": "Szablon do tworzenia adapterów ioBroker za pomocą TypeScript"
         },
         "authors": [
             "my Name <my@email.com>"
@@ -34,6 +68,7 @@
         "enabled": true,
         "extIcon": "https://raw.githubusercontent.com/AlCalzone/ioBroker.template-ts/master/admin/template.png",
         "keywords": ["template", "vis", "GUI", "graphical", "scada"],
+        "materialize": true,
         "readme": "https://github.com/AlCalzone/ioBroker.template-ts/blob/master/README.md",
         "loglevel": "info",
         "type": "general",
