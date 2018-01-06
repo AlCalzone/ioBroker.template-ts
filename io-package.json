@@ -37,7 +37,8 @@
                 "pl": "Pierwsze wydanie"
             }
         },
-        "title": {
+        "title": "Template adapter using TypeScript/Node.js",
+        "titleLang": {
             "en": "Template adapter using TypeScript/Node.js",
             "de": "Vorlagenadapter mit TypeScript / Node.js",
             "ru": "Адаптер шаблонов с использованием TypeScript / Node.js",
